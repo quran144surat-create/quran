@@ -15,7 +15,7 @@
 @media(prefers-color-scheme:dark){:root{--bg:#0A1512;--surface:#101F1A;--ink:#ECE8D8;--muted:#9DB0A6;--line:#203429;--primary:#4FB596;--band:#16281F}}
 *{box-sizing:border-box}body{margin:0;background:var(--surface);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 header{position:sticky;top:0;z-index:5;background:var(--surface);padding-top:env(safe-area-inset-top,0px)}
-.bar{display:flex;align-items:center;gap:4px;padding:10px 8px 6px 16px}
+.bar{position:relative;display:flex;align-items:center;gap:4px;padding:10px 8px 6px 16px}
 h1{flex:1;margin:0;font-size:22px;font-weight:600}
 .ic{width:44px;height:44px;border:0;background:none;color:var(--ink);border-radius:50%;display:grid;place-items:center;cursor:pointer}
 .ic svg{width:24px;height:24px;fill:currentColor}
@@ -35,16 +35,34 @@ main{padding-bottom:env(safe-area-inset-bottom,0px)}
 .r:active,.g:active{background:var(--line)}
 .del{border:0;background:none;color:var(--muted);font-size:22px;padding:8px 12px;cursor:pointer}
 .empty{padding:48px 24px;text-align:center;color:var(--muted)}
+#menu{display:none;position:absolute;top:8px;right:8px;z-index:20;min-width:200px;padding:8px 0;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+#menu.on{display:block}
+#menu button{display:block;width:100%;padding:16px 20px;border:0;background:none;color:var(--ink);font:inherit;font-size:17px;text-align:left;cursor:pointer}
+#menu button:active{background:var(--line)}
+#mscrim{display:none;position:fixed;inset:0;z-index:15}#mscrim.on{display:block}
+#panel{display:none;position:fixed;inset:0;z-index:30;background:var(--surface);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#panel.on{display:block}
+#panel .bar{padding-left:8px}
 </style></head><body>
 <header>
   <div class="bar">
     <h1>Quran</h1>
     <button class="ic" id="last" aria-label="Lanjut membaca"><svg viewBox="0 0 24 24"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg></button>
     <button class="ic" id="sbtn" aria-label="Cari surat"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
+    <button class="ic" id="mbtn" aria-label="Menu lainnya" aria-haspopup="true"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></button>
+    <div id="menu" role="menu"><button role="menuitem" data-m="Setelan">Setelan</button><button role="menuitem" data-m="Aplikasi lainnya">Aplikasi lainnya</button></div>
   </div>
   <div id="sb"><input id="q" type="search" placeholder="Cari nama atau nomor surat" autocomplete="off"></div>
   <nav class="tabs"><button class="tab on" data-t="s">SURAT</button><button class="tab" data-t="j">JUZ'</button><button class="tab" data-t="b">PENANDA</button></nav>
 </header>
+<div id="mscrim"></div>
+<section id="panel" aria-hidden="true">
+  <div class="bar">
+    <button class="ic" id="pback" aria-label="Kembali"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <h1 id="ptitle"></h1>
+  </div>
+  <div id="pbody"></div>
+</section>
 <main id="list"></main>
 <script src="config.js"></script>
 <script>
@@ -87,6 +105,12 @@ $('sbtn').onclick=()=>{
   if(tab!=='s')document.querySelector('[data-t=s]').click();
   const on=$('sb').classList.toggle('on');if(on)$('q').focus();else{$('q').value='';render()}};
 $('q').oninput=render;
+const menu=(on)=>{$('menu').classList.toggle('on',on);$('mscrim').classList.toggle('on',on)};
+$('mbtn').onclick=()=>menu(!$('menu').classList.contains('on'));
+$('mscrim').onclick=()=>menu(false);
+$('menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  menu(false);$('ptitle').textContent=b.dataset.m;$('panel').classList.add('on');$('panel').setAttribute('aria-hidden','false')};
+$('pback').onclick=()=>{$('panel').classList.remove('on');$('panel').setAttribute('aria-hidden','true')};
 $('last').onclick=()=>{let p=1;try{p=+localStorage.getItem('quran.last')||1}catch(e){}location.href=go(p)};
 $('list').addEventListener('click',e=>{
   const d=e.target.closest('.del');if(!d)return;e.preventDefault();
