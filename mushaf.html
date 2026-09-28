@@ -29,16 +29,25 @@ body.ui header,body.ui #ind{transform:none;opacity:1;pointer-events:auto}
 .h img{width:auto;height:100%;max-width:100%;object-fit:contain;-webkit-mask-image:linear-gradient(90deg,transparent,#000 2.5%,#000 97.5%,transparent);mask-image:linear-gradient(90deg,transparent,#000 2.5%,#000 97.5%,transparent)}
 .sp::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - min(9vw,130px));width:min(18vw,260px);pointer-events:none;background:linear-gradient(90deg,transparent,rgba(0,0,0,.16) 50%,transparent)}
 .msg{max-width:340px;padding:0 16px;direction:ltr}
+#dlbtn{flex:none;padding:8px;display:grid;place-items:center}
+#dlbtn[hidden]{display:none}
+#dlbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+#dlbox{position:fixed;z-index:6;left:12px;right:12px;top:calc(62px + env(safe-area-inset-top,0px));max-width:360px;margin-inline:auto;direction:ltr;text-align:left;display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+#dlbox[hidden],body:not(.ui) #dlbox{display:none}
+#dlbar{width:100%;accent-color:var(--primary)}
+#dlgo{background:var(--primary);color:var(--on);border-color:var(--primary)}
 </style></head><body>
 <header>
   <h1 id="ttl">Juz 1</h1><span class="pill" id="info" hidden></span>
   <button id="bmbtn" aria-label="Tandai halaman ini"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg></button>
+  <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></button>
   <select id="jsel" aria-label="Juz"></select>
   <select id="ssel" aria-label="Surat"></select>
   <select id="sel" aria-label="Halaman"></select>
 </header>
 <main id="track"></main>
 <div id="ind"></div>
+<div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
 <script src="config.js"></script>
 <script>
 const C=CFG,$=id=>document.getElementById(id),T=C.total,src=C.src;
@@ -69,7 +78,8 @@ function loadImg(h){
   if(h.dataset.done)return;h.dataset.done=1;loaded.add(h);const n=+h.dataset.p;
   const im=new Image();im.alt='Halaman '+n;
   im.onerror=()=>{h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>'};
-  im.src=src(n);h.appendChild(im);
+  const u=src(n);try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}
+  im.src=u;h.appendChild(im);
 }
 // buang gambar yang sudah jauh dari halaman aktif supaya memori tidak menumpuk
 function unloadFar(){loaded.forEach(h=>{if(Math.abs(+h.dataset.p-cur)>12){h.replaceChildren();delete h.dataset.done;loaded.delete(h)}})}
@@ -144,4 +154,46 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'&&cur-st>=1)goto(cur-st,true);
 });
 if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.serviceWorker.register('sw.js');
+
+// Simpan semua halaman untuk offline (Cache API, bukan localStorage)
+(()=>{
+  const dlb=$('dlbtn'),box=$('dlbox'),bar=$('dlbar'),txt=$('dltxt'),gob=$('dlgo');
+  if(!window.caches||!location.protocol.startsWith('http')){dlb.hidden=true;return}
+  const CN='quran-v2',abs=n=>new URL(src(n),location.href).href;
+  bar.max=T;let run=false,stop=false;
+  async function missing(c){
+    const set=new Set((await c.keys()).map(r=>r.url)),m=[];
+    for(let i=1;i<=T;i++){const u=abs(i);if(!set.has(u))m.push(u)}
+    return m;
+  }
+  async function refresh(){
+    if(run)return;
+    const n=T-(await missing(await caches.open(CN))).length;
+    bar.value=n;
+    txt.textContent=n>=T?'Semua '+T+' halaman sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+T+' halaman tersimpan di perangkat.';
+    gob.textContent=n>=T?'Periksa lagi':(n?'Lanjutkan unduh':'Unduh semua halaman');
+  }
+  async function start(){
+    run=true;stop=false;gob.textContent='Berhenti';
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+    const c=await caches.open(CN),todo=await missing(c);
+    let done=T-todo.length,fail=0,streak=0,i=0;
+    const upd=()=>{bar.value=done;txt.textContent=done+' / '+T+' halaman tersimpan'+(fail?' · '+fail+' gagal':'')};
+    upd();
+    const w=async()=>{
+      while(!stop&&streak<8&&i<todo.length){
+        const u=todo[i++];
+        try{const r=await fetch(u,{mode:'cors'});if(!r.ok)throw 0;await c.put(u,r);done++;streak=0}
+        catch(e){fail++;streak++}
+        upd();
+      }
+    };
+    await Promise.all([w(),w(),w(),w()]);
+    run=false;const left=T-done;
+    txt.textContent=left?done+' / '+T+' tersimpan. '+(streak>=8?'Ada yang gagal (koneksi atau penyimpanan penuh).':'Dihentikan.')+' Tekan lanjutkan.':'Selesai! Semua '+T+' halaman tersimpan.';
+    gob.textContent=left?'Lanjutkan unduh':'Periksa lagi';
+  }
+  dlb.onclick=()=>{box.hidden=!box.hidden;if(!box.hidden)refresh()};
+  gob.onclick=()=>run?(stop=true):start();
+})();
 </script></body></html>
