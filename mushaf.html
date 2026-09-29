@@ -76,34 +76,16 @@ for(let j=1;j<=30;j++)$('jsel').add(new Option('Juz '+j,j));
 SN.forEach((n,i)=>$('ssel').add(new Option((i+1)+'. '+n,i+1)));
 for(let i=1;i<=T;i++)$('sel').add(new Option('Hal. '+i,i));
 
-const track=$('track'),mq=matchMedia('(orientation:landscape) and (min-width:600px)');
+const track=$('track'),mq=matchMedia('(orientation:landscape)');
 let spread=mq.matches,cells={},loaded=new Set(),loadObs,curObs;
 const start=n=>spread?(n%2?n:n-1):n;
 
-// Halaman yang sudah diunduh di Kuis Murojaah v3 (cache 'mushaf-v1', gambar potret webp) dipakai juga di sini.
-// Hanya berlaku bila kedua app ada di alamat (origin) yang sama; kalau tidak, otomatis diabaikan.
-const V3='https://quran144surat-create.github.io/kuis_murojaah_versi_3/';
-const v3url=n=>{const j=juzOf(n);return V3+encodeURI('P/'+(j===1?'Juz 1':'juz '+j)+'/'+n+'.webp')};
-let v3c;
-async function v3cache(){
-  if(v3c!==undefined)return v3c;
-  try{v3c=(window.caches&&await caches.has('mushaf-v1'))?await caches.open('mushaf-v1'):null}catch(e){v3c=null}
-  return v3c;
-}
-async function v3get(n){
-  try{const c=await v3cache();if(!c)return null;const r=await c.match(v3url(n));return r?URL.createObjectURL(await r.blob()):null}catch(e){return null}
-}
 function loadImg(h){
   if(h.dataset.done)return;h.dataset.done=1;loaded.add(h);const n=+h.dataset.p;
-  const im=new Image();im.alt='Halaman '+n;h.appendChild(im);
-  const u=src(n);let blob=null;
-  const net=()=>{try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}im.src=u};
-  im.onerror=()=>{
-    if(blob){URL.revokeObjectURL(blob);blob=null;net();return}
-    h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+u+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>';
-  };
-  im.onload=()=>{if(blob){URL.revokeObjectURL(blob);blob=null}};
-  v3get(n).then(b=>{if(b){blob=b;im.src=b}else net()});
+  const im=new Image();im.alt='Halaman '+n;
+  im.onerror=()=>{h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>'};
+  const u=src(n);try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}
+  im.src=u;h.appendChild(im);
 }
 // buang gambar yang sudah jauh dari halaman aktif supaya memori tidak menumpuk
 function unloadFar(){loaded.forEach(h=>{if(Math.abs(+h.dataset.p-cur)>12){h.replaceChildren();delete h.dataset.done;loaded.delete(h)}})}
@@ -141,8 +123,9 @@ function build(){
   track.replaceChildren();cells={};loaded.clear();
   const step=spread?2:1,frag=document.createDocumentFragment();
   for(let i=1;i<=T;i+=step){
-    const d=document.createElement('div');d.className='pg'+(spread?' sp':'');d.dataset.p=i;
-    for(let n=i;n<i+step&&n<=T;n++){const h=document.createElement('div');h.className='h';h.dataset.p=n;d.appendChild(h)}
+    const d=document.createElement('div');d.className='pg';d.dataset.p=i;
+    // potret: 1 gambar = 1 halaman; landscape: 1 gambar (i,i+1) sudah berisi 2 halaman
+    const h=document.createElement('div');h.className='h';h.dataset.p=i;d.appendChild(h);
     cells[i]=d;frag.appendChild(d);
   }
   track.appendChild(frag);
@@ -179,35 +162,33 @@ addEventListener('keydown',e=>{
 });
 if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.serviceWorker.register('sw.js');
 
-// Simpan semua halaman untuk offline (Cache API, bukan localStorage)
+// Simpan semua gambar untuk offline (Cache API, bukan localStorage).
+// Cache 'mushaf-v1' dan alamat gambar sama dengan Kuis Murojaah v3, jadi unduhan di salah satu app terlihat di app satunya.
 (()=>{
   const dlb=$('dlbtn'),box=$('dlbox'),bar=$('dlbar'),txt=$('dltxt'),gob=$('dlgo');
   if(!window.caches||!location.protocol.startsWith('http')){dlb.hidden=true;return}
-  const CN='quran-v2',abs=n=>new URL(src(n),location.href).href;
-  bar.max=T;let run=false,stop=false;
+  const CN='mushaf-v1';
+  // potret (1 gambar per halaman) + landscape (1 gambar per pasangan halaman)
+  const ALL=(()=>{const st=new Set();for(let i=1;i<=T;i++){st.add(new URL(src(i,'P'),location.href).href);st.add(new URL(src(i,'L'),location.href).href)}return[...st]})();
+  const N=ALL.length;
+  bar.max=N;let run=false,stop=false;
   async function missing(c){
-    const set=new Set((await c.keys()).map(r=>r.url)),m=[];
-    const v=await v3cache(),vs=v?new Set((await v.keys()).map(r=>r.url)):null;let viaV3=0;
-    for(let i=1;i<=T;i++){
-      const u=abs(i);if(set.has(u))continue;
-      if(vs&&vs.has(new URL(v3url(i)).href)){viaV3++;continue}
-      m.push(u);
-    }
-    m.viaV3=viaV3;return m;
+    const set=new Set((await c.keys()).map(r=>r.url));
+    return ALL.filter(u=>!set.has(u));
   }
   async function refresh(){
     if(run)return;
-    const ms=await missing(await caches.open(CN)),n=T-ms.length;
+    const n=N-(await missing(await caches.open(CN))).length;
     bar.value=n;
-    txt.textContent=(n>=T?'Semua '+T+' halaman sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+T+' halaman tersimpan di perangkat.')+(ms.viaV3?' ('+ms.viaV3+' halaman dari unduhan Kuis Murojaah v3)':'');
-    gob.textContent=n>=T?'Periksa lagi':(n?'Lanjutkan unduh':'Unduh semua halaman');
+    txt.textContent=n>=N?'Semua halaman (potret & landscape) sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+N+' gambar tersimpan di perangkat.';
+    gob.textContent=n>=N?'Periksa lagi':(n?'Lanjutkan unduh':'Unduh semua halaman');
   }
   async function start(){
     run=true;stop=false;gob.textContent='Berhenti';
     try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
     const c=await caches.open(CN),todo=await missing(c);
-    let done=T-todo.length,fail=0,streak=0,i=0;
-    const upd=()=>{bar.value=done;txt.textContent=done+' / '+T+' halaman tersimpan'+(fail?' · '+fail+' gagal':'')};
+    let done=N-todo.length,fail=0,streak=0,i=0;
+    const upd=()=>{bar.value=done;txt.textContent=done+' / '+N+' gambar tersimpan'+(fail?' · '+fail+' gagal':'')};
     upd();
     const w=async()=>{
       while(!stop&&streak<8&&i<todo.length){
@@ -218,8 +199,8 @@ if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.servi
       }
     };
     await Promise.all([w(),w(),w(),w()]);
-    run=false;const left=T-done;
-    txt.textContent=left?done+' / '+T+' tersimpan. '+(streak>=8?'Ada yang gagal (koneksi atau penyimpanan penuh).':'Dihentikan.')+' Tekan lanjutkan.':'Selesai! Semua '+T+' halaman tersimpan.';
+    run=false;const left=N-done;
+    txt.textContent=left?done+' / '+N+' tersimpan. '+(streak>=8?'Ada yang gagal (koneksi, penyimpanan penuh, atau gambar belum ada di repo).':'Dihentikan.')+' Tekan lanjutkan.':'Selesai! Semua gambar tersimpan.';
     gob.textContent=left?'Lanjutkan unduh':'Periksa lagi';
   }
   dlb.onclick=()=>{box.hidden=!box.hidden;if(!box.hidden)refresh()};

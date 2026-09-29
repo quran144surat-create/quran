@@ -1,9 +1,10 @@
 // Cache halaman/aset app ini. Nama diberi awalan 'quran-shell-' supaya hanya cache miliknya yang dibersihkan.
-// Cache 'quran-v2' (unduhan halaman mushaf) dan cache milik app lain di alamat yang sama TIDAK dihapus.
-const CACHE = 'quran-shell-v1';
+// Cache 'mushaf-v1' (unduhan gambar, dipakai bersama Kuis Murojaah v3) dan cache app lain TIDAK dihapus.
+const CACHE = 'quran-shell-v2';
 const ASSETS = ['./', './index.html', './mushaf.html', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // simpan per file: satu file yang tidak ada tidak menggagalkan instalasi
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(
@@ -11,12 +12,17 @@ self.addEventListener('activate', e => {
   )).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  const r = e.request;
+  if (r.method !== 'GET') return;
+  // gambar mushaf: pakai simpanan offline dulu (dari unduhan), lalu internet; tidak digandakan ke cache lain
+  if (/\.(jpe?g|png|webp)$/i.test(new URL(r.url).pathname)) {
+    e.respondWith(caches.match(r).then(hit => hit || fetch(r)));
+    return;
+  }
   e.respondWith(
-    fetch(e.request).then(r => {
-      const copy = r.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy));
-      return r;
-    }).catch(() => caches.match(e.request))
+    fetch(r).then(res => {
+      if (res.ok && !res.redirected) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
+      return res;
+    }).catch(() => caches.match(r, { ignoreSearch: true }))
   );
 });
