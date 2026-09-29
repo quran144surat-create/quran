@@ -80,12 +80,30 @@ const track=$('track'),mq=matchMedia('(orientation:landscape) and (min-width:600
 let spread=mq.matches,cells={},loaded=new Set(),loadObs,curObs;
 const start=n=>spread?(n%2?n:n-1):n;
 
+// Halaman yang sudah diunduh di Kuis Murojaah v3 (cache 'mushaf-v1', gambar potret webp) dipakai juga di sini.
+// Hanya berlaku bila kedua app ada di alamat (origin) yang sama; kalau tidak, otomatis diabaikan.
+const V3='https://quran144surat-create.github.io/kuis_murojaah_versi_3/';
+const v3url=n=>{const j=juzOf(n);return V3+encodeURI('P/'+(j===1?'Juz 1':'juz '+j)+'/'+n+'.webp')};
+let v3c;
+async function v3cache(){
+  if(v3c!==undefined)return v3c;
+  try{v3c=(window.caches&&await caches.has('mushaf-v1'))?await caches.open('mushaf-v1'):null}catch(e){v3c=null}
+  return v3c;
+}
+async function v3get(n){
+  try{const c=await v3cache();if(!c)return null;const r=await c.match(v3url(n));return r?URL.createObjectURL(await r.blob()):null}catch(e){return null}
+}
 function loadImg(h){
   if(h.dataset.done)return;h.dataset.done=1;loaded.add(h);const n=+h.dataset.p;
-  const im=new Image();im.alt='Halaman '+n;
-  im.onerror=()=>{h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>'};
-  const u=src(n);try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}
-  im.src=u;h.appendChild(im);
+  const im=new Image();im.alt='Halaman '+n;h.appendChild(im);
+  const u=src(n);let blob=null;
+  const net=()=>{try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}im.src=u};
+  im.onerror=()=>{
+    if(blob){URL.revokeObjectURL(blob);blob=null;net();return}
+    h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+u+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>';
+  };
+  im.onload=()=>{if(blob){URL.revokeObjectURL(blob);blob=null}};
+  v3get(n).then(b=>{if(b){blob=b;im.src=b}else net()});
 }
 // buang gambar yang sudah jauh dari halaman aktif supaya memori tidak menumpuk
 function unloadFar(){loaded.forEach(h=>{if(Math.abs(+h.dataset.p-cur)>12){h.replaceChildren();delete h.dataset.done;loaded.delete(h)}})}
@@ -169,14 +187,19 @@ if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.servi
   bar.max=T;let run=false,stop=false;
   async function missing(c){
     const set=new Set((await c.keys()).map(r=>r.url)),m=[];
-    for(let i=1;i<=T;i++){const u=abs(i);if(!set.has(u))m.push(u)}
-    return m;
+    const v=await v3cache(),vs=v?new Set((await v.keys()).map(r=>r.url)):null;let viaV3=0;
+    for(let i=1;i<=T;i++){
+      const u=abs(i);if(set.has(u))continue;
+      if(vs&&vs.has(new URL(v3url(i)).href)){viaV3++;continue}
+      m.push(u);
+    }
+    m.viaV3=viaV3;return m;
   }
   async function refresh(){
     if(run)return;
-    const n=T-(await missing(await caches.open(CN))).length;
+    const ms=await missing(await caches.open(CN)),n=T-ms.length;
     bar.value=n;
-    txt.textContent=n>=T?'Semua '+T+' halaman sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+T+' halaman tersimpan di perangkat.';
+    txt.textContent=(n>=T?'Semua '+T+' halaman sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+T+' halaman tersimpan di perangkat.')+(ms.viaV3?' ('+ms.viaV3+' halaman dari unduhan Kuis Murojaah v3)':'');
     gob.textContent=n>=T?'Periksa lagi':(n?'Lanjutkan unduh':'Unduh semua halaman');
   }
   async function start(){
