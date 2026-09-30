@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Mushaf</title>
 <style>
-:root{--bg:#F2F1E7;--surface:#FBFAF4;--ink:#10231D;--muted:#586C63;--line:#DBDED0;--primary:#0E4A3B;--on:#F8F5E8;--gold:#EDE1BC;--goldink:#7A5D12}
-@media(prefers-color-scheme:dark){:root{--bg:#0A1512;--surface:#101F1A;--ink:#ECE8D8;--muted:#9DB0A6;--line:#203429;--primary:#1F7A60;--on:#F4F1E4;--gold:#3A3219;--goldink:#D9B96B}}
+:root{--accent:#0E4A3B;--bg:#F2F1E7;--surface:#FBFAF4;--ink:#10231D;--muted:#586C63;--line:#DBDED0;--primary:#0E4A3B;--on:#F8F5E8;--gold:#EDE1BC;--goldink:#7A5D12}
+@media(prefers-color-scheme:dark){:root{--accent:#5CC9A7;--bg:#0A1512;--surface:#101F1A;--ink:#ECE8D8;--muted:#9DB0A6;--line:#203429;--primary:#1F7A60;--on:#F4F1E4;--gold:#3A3219;--goldink:#D9B96B}}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
 button,select{font:600 13.5px system-ui,sans-serif;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 12px}
@@ -73,22 +73,20 @@ body.hid .h{visibility:hidden}
 /* Murattal: kotak ayat di atas gambar, pemutar mengambang, pengaturan ulang & rentang */
 .h{position:relative}
 .ao{position:absolute;pointer-events:none;direction:ltr}
-.ao i{position:absolute;border-radius:5px;pointer-events:none}
-body.aud .ao i{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:rgba(214,170,40,.3)}
+.ao i{position:absolute;border-radius:5px;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+body.aud .ao i{cursor:pointer}
 .ao i.on{background:rgba(214,170,40,.36)}
 #abtn{flex:none;padding:8px;display:grid;place-items:center}
 #abtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 #abtn.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
-#ap{position:fixed;z-index:4;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:none;flex-direction:column;align-items:center;gap:8px;direction:ltr;pointer-events:none;transition:bottom .22s ease}
+#ap{display:none;flex-direction:column;align-items:center;gap:8px;direction:ltr;padding:8px 10px 0}
 body.aud #ap{display:flex}
-body.ui #ap{bottom:calc(var(--bh,96px) + 10px)}
-#ap>*{pointer-events:auto}
-#apb{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:calc(100vw - 16px)}
+#apb{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%}
 #apb .rb{flex:none}
 #aplay{background:var(--primary);color:var(--on);border-color:var(--primary)}
 #aopt.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #alb{min-width:84px;max-width:38vw;padding:0 6px;text-align:center;font:600 12.5px system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#aset{width:min(360px,calc(100vw - 16px));display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:left}
+#aset{width:min(420px,100%);max-height:42vh;overflow:auto;display:grid;gap:8px;background:transparent;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left}
 #aset[hidden],#arb[hidden],#at[hidden]{display:none}
 #aset .al{font:600 12.5px system-ui,sans-serif;color:var(--muted)}
 #aset .sw{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13.5px}
@@ -100,43 +98,111 @@ body.ui #ap{bottom:calc(var(--bh,96px) + 10px)}
 .ar{display:grid;grid-template-columns:1fr 84px;gap:6px}
 .ar select{min-width:0;max-width:none;width:100%}
 #at{background:var(--ink);color:var(--bg);border-radius:99px;padding:7px 14px;font:600 12.5px system-ui,sans-serif;max-width:calc(100vw - 24px);text-align:center}
+
+/* ===== Gaya minimalis: halaman mushaf jadi bintang, kontrol disembunyikan sampai diketuk ===== */
+header,#bot{background:color-mix(in srgb,var(--surface) 76%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5)}
+header{gap:4px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:4px}
+#bot{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+#homebtn,#bmbtn,#morebtn{flex:none;width:42px;height:42px;padding:0;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--accent);box-shadow:none}
+#homebtn svg,#bmbtn svg,#morebtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+#bmbtn.on{color:var(--goldink);border:0;background:transparent}
+#bmbtn.on svg{fill:var(--goldink);stroke:var(--goldink)}
+#ttl{direction:ltr;flex:1;min-width:0;border:0;background:transparent;box-shadow:none;padding:8px 6px;font:700 16px system-ui,sans-serif;color:var(--ink);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ttl::after{content:"\25BE";color:var(--muted);margin-inline-start:6px;font-size:12px}
+.rb{border:0;background:transparent;color:var(--accent)}
+#rfab:disabled{opacity:.6}
+/* menu ⋯ */
+#menu{position:fixed;z-index:7;top:calc(52px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));min-width:236px;display:grid;padding:6px;direction:ltr;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+#menu[hidden],body:not(.ui) #menu{display:none}
+#menu button{display:flex;align-items:center;gap:12px;width:100%;flex:none;padding:12px 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);text-align:left;font:600 14px system-ui,sans-serif}
+#menu button[hidden],#menu #reye{display:none}
+#menu svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block;flex:none;color:var(--accent)}
+#menu button.on{color:var(--goldink);background:var(--gold)}
+#menu button.on svg{color:var(--goldink)}
+/* lembar bawah (navigasi & aksi ayat) */
+.scrim{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;direction:ltr}
+.scrim[hidden]{display:none}
+.sheet{width:min(480px,100%);display:grid;gap:10px;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border-radius:18px 18px 0 0;text-align:left}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 2px}
+.sh-t{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 16px system-ui,sans-serif}
+.fld{display:grid;gap:4px;font:600 12.5px system-ui,sans-serif;color:var(--muted)}
+.fld select{width:100%;padding:12px 10px;font-size:15px}
+.row{display:flex;align-items:center;gap:14px;width:100%;padding:13px 6px;border:0;border-radius:10px;background:transparent;color:var(--ink);text-align:left;font:600 15px system-ui,sans-serif}
+.row svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none;color:var(--accent)}
+.row.on,.row.on svg{color:var(--goldink)}
+/* bilah bawah: satu baris = pengaturan rekaman, nomor halaman, tombol rekam */
+#rc{flex-wrap:nowrap;padding:6px 10px 0}
+#rc:not(:has(#rt:not([hidden]),#rtools:not([hidden]))){display:none}
+#rt{order:0;flex:none}
+#rset{display:flex;justify-content:center;align-items:center;gap:12px;padding:8px 10px 0;direction:ltr}
+#rset[hidden]{display:none}
+#rg{border:0;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+#brow{display:flex;align-items:center;gap:6px;direction:ltr;padding:4px 10px calc(4px + env(safe-area-inset-bottom,0px))}
+#brow #ind{flex:1;padding:0}
+#rcfg.on{color:var(--goldink);background:var(--gold)}
+/* toast murattal */
+#at{position:fixed;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));pointer-events:none;width:max-content;direction:ltr}
+body.ui #at{bottom:calc(var(--bh,96px) + 12px)}
 </style></head><body>
 <header>
   <a id="homebtn" href="index.html" aria-label="Kembali ke halaman awal"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg></a>
-  <h1 id="ttl">Juz 1</h1><span class="pill" id="info" hidden></span>
+  <button id="ttl" aria-label="Pindah juz, surat, atau halaman" aria-haspopup="dialog">Juz 1</button>
   <button id="bmbtn" aria-label="Tandai halaman ini"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg></button>
+  <button id="morebtn" aria-label="Menu" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg></button>
+</header>
+<div id="menu" role="menu" hidden>
   <button id="hbtn"></button>
   <button id="abtn" aria-label="Murattal" aria-pressed="false"></button>
-  <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></button>
-  <select id="jsel" aria-label="Juz"></select>
-  <select id="ssel" aria-label="Surat"></select>
-  <select id="sel" aria-label="Halaman"></select>
-</header>
+  <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Unduh untuk offline</span></button>
+  <button id="reye"></button>
+</div>
+<div id="nav" class="scrim" hidden><div class="sheet" role="dialog" aria-label="Pindah halaman">
+  <div class="grab"></div>
+  <div class="sh-t"><span>Pindah ke</span><span class="pill" id="info" hidden></span></div>
+  <label class="fld">Juz<select id="jsel" aria-label="Juz"></select></label>
+  <label class="fld">Surat<select id="ssel" aria-label="Surat"></select></label>
+  <label class="fld">Halaman<select id="sel" aria-label="Halaman"></select></label>
+</div></div>
+<div id="ash" class="scrim" hidden><div class="sheet" role="dialog" aria-label="Aksi ayat">
+  <div class="grab"></div>
+  <div class="sh-t" id="asht"></div>
+  <button id="aph" class="row"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg><span>Putar dari ayat ini</span></button>
+  <button id="abm" class="row"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Tandai halaman</span></button>
+  <button id="ashare" class="row"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.9 7.6-4.4M8.2 13.1l7.6 4.4"/></svg><span>Bagikan</span></button>
+</div></div>
+<div id="at" hidden role="status"></div>
 <main id="track"></main>
 
 <div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
-<div id="bot"><div id="rc"><button id="rfab" class="rb" aria-label="Rekam bacaan"></button><button id="reye" class="rb"></button><div id="rg" role="group" aria-label="Penguatan suara"><button id="rgm" aria-label="Kurangi penguatan">−</button><span id="rgain" aria-live="polite"></span><button id="rgp" aria-label="Tambah penguatan">+</button></div><button id="rnr" class="rb" aria-label="Peredam bising"></button><span id="rt" hidden></span>
-<div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div></div><div id="ind"></div></div>
-<div id="ap">
-  <div id="at" hidden role="status"></div>
-  <div id="aset" hidden>
-    <div class="al">Ulangi tiap ayat</div>
-    <div class="seg" id="arep"><button data-r="1">1&times;</button><button data-r="2">2&times;</button><button data-r="3">3&times;</button><button data-r="0">Tanpa batas</button></div>
-    <label class="sw"><input type="checkbox" id="arng"> Atur rentang ayat</label>
-    <div id="arb" hidden>
-      <div class="al">Mulai</div><div class="ar"><select id="rs_s" aria-label="Surat mulai"></select><select id="rs_a" aria-label="Ayat mulai"></select></div>
-      <div class="al">Selesai</div><div class="ar"><select id="re_s" aria-label="Surat selesai"></select><select id="re_a" aria-label="Ayat selesai"></select></div>
-      <button id="apg">Isi dari halaman ini</button>
+<div id="bot">
+  <div id="rset" hidden>
+    <div id="rg" role="group" aria-label="Penguatan suara"><button id="rgm" aria-label="Kurangi penguatan">−</button><span id="rgain" aria-live="polite"></span><button id="rgp" aria-label="Tambah penguatan">+</button></div>
+    <button id="rnr" class="rb" aria-label="Peredam bising"></button>
+  </div>
+  <div id="ap">
+    <div id="aset" hidden>
+      <div class="al">Ulangi tiap ayat</div>
+      <div class="seg" id="arep"><button data-r="1">1&times;</button><button data-r="2">2&times;</button><button data-r="3">3&times;</button><button data-r="0">Tanpa batas</button></div>
+      <label class="sw"><input type="checkbox" id="arng"> Atur rentang ayat</label>
+      <div id="arb" hidden>
+        <div class="al">Mulai</div><div class="ar"><select id="rs_s" aria-label="Surat mulai"></select><select id="rs_a" aria-label="Ayat mulai"></select></div>
+        <div class="al">Selesai</div><div class="ar"><select id="re_s" aria-label="Surat selesai"></select><select id="re_a" aria-label="Ayat selesai"></select></div>
+        <button id="apg">Isi dari halaman ini</button>
+      </div>
+    </div>
+    <div id="apb">
+      <button id="aprev" class="rb" aria-label="Ayat sebelumnya"></button>
+      <button id="aplay" class="rb" aria-label="Putar murattal"></button>
+      <button id="anext" class="rb" aria-label="Ayat berikutnya"></button>
+      <button id="astop" class="rb" aria-label="Berhenti"></button>
+      <span id="alb">Murattal</span>
+      <button id="aopt" class="rb" aria-label="Pengaturan murattal"></button>
     </div>
   </div>
-  <div id="apb">
-    <button id="aprev" class="rb" aria-label="Ayat sebelumnya"></button>
-    <button id="aplay" class="rb" aria-label="Putar murattal"></button>
-    <button id="anext" class="rb" aria-label="Ayat berikutnya"></button>
-    <button id="astop" class="rb" aria-label="Berhenti"></button>
-    <span id="alb">Murattal</span>
-    <button id="aopt" class="rb" aria-label="Pengaturan murattal"></button>
+  <div id="rc"><span id="rt" hidden></span>
+    <div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div>
   </div>
+  <div id="brow"><button id="rcfg" class="rb" aria-label="Pengaturan rekaman"></button><div id="ind"></div><button id="rfab" class="rb" aria-label="Rekam bacaan"></button></div>
 </div>
 <script src="config.js"></script>
 <script>
@@ -185,10 +251,11 @@ $('bmbtn').onclick=()=>{
 };
 function setCur(n){
   cur=n;$('sel').value=n;
-  const j=juzOf(n);$('jsel').value=j;$('ttl').textContent='Juz '+j;
+  const j=juzOf(n);$('jsel').value=j;
   // surat yang tampil di halaman aktif; pilihan pengguna dipertahankan bila masih ada di halaman ini
   const e=spread&&n<T?n+1:n,s1=surahOf(C.ps[n-1]),s2=surahOf(e<T?C.ps[e]-1:TA),sv=+$('ssel').value;
   $('ssel').value=(sv>=s1&&sv<=s2)?sv:s1;
+  $('ttl').textContent='Juz '+j+' \u00b7 '+SN[+$('ssel').value-1];
   $('ind').textContent='Hal. '+(spread&&n<T?n+'–'+(n+1):n)+' / '+T;
   const hasAyah=ayahPage&&(ayahPage===n||(spread&&ayahPage===n+1));
   history.replaceState(null,'','?p='+n+(hasAyah?'&s='+s+'&a='+a:''));
@@ -248,6 +315,18 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'&&cur+st<=T)goto(cur+st,true);
   if(e.key==='ArrowRight'&&cur-st>=1)goto(cur-st,true);
 });
+// Menu ⋯, lembar navigasi (ketuk judul), dan perapian bilah
+const navSheet=$('nav'),menu=$('menu'),more=$('morebtn');
+const setMenu=o=>{menu.hidden=!o;more.setAttribute('aria-expanded',o)};
+more.onclick=()=>setMenu(menu.hidden);
+menu.addEventListener('click',e=>{if(e.target.closest('button'))setMenu(false)});
+// ketukan di luar menu hanya menutup menu, tidak ikut menyembunyikan bilah
+document.addEventListener('click',e=>{if(!menu.hidden&&!e.target.closest('#menu,#morebtn')){e.stopPropagation();setMenu(false)}},true);
+$('ttl').onclick=()=>{setMenu(false);navSheet.hidden=false};
+navSheet.addEventListener('click',e=>{if(e.target===navSheet)navSheet.hidden=true});
+['jsel','ssel','sel'].forEach(id=>$(id).addEventListener('change',()=>{navSheet.hidden=true}));
+new MutationObserver(()=>{if(!document.body.classList.contains('ui')){setMenu(false);$('rset').hidden=true;$('rcfg').classList.remove('on')}}).observe(document.body,{attributes:true,attributeFilter:['class']});
+addEventListener('keydown',e=>{if(e.key==='Escape'){navSheet.hidden=true;$('ash').hidden=true;setMenu(false)}});
 if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.serviceWorker.register('sw.js');
 
 // Simpan semua gambar untuk offline (Cache API, bukan localStorage).
@@ -301,6 +380,8 @@ const fab=$('rfab'),tools=$('rtools'),rt=$('rt'),play=$('rplay'),mem={};
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={mic:'<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',pause:'<path d="M9 5v14M15 5v14"/>'};
 fab.innerHTML=svg(I.mic);play.innerHTML=svg(I.play);
+$('rcfg').innerHTML=svg('<path d="M6 4v6M6 14v6M12 4v2M12 10v10M18 4v10M18 18v2"/><circle cx="6" cy="12" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="18" cy="16" r="2"/>');
+$('rcfg').onclick=()=>{const r=$('rset');r.hidden=!r.hidden;$('rcfg').classList.toggle('on',!r.hidden)};
 // penguatan suara (tombol - / +, tidak berputar) dan peredam bising bertingkat
 const gb=$('rgain'),gm=$('rgm'),gp=$('rgp'),nb=$('rnr'),GL=[1,1.5,2,3,4];
 let gi=1,gv=GL[gi],gainNode=null;
@@ -486,7 +567,7 @@ sync(cur);
 (()=>{
 const bs=[$('hbtn'),$('reye')];let hid=false,peek=false,pt,skip=false;
 const eye='<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';
-const paint=()=>bs.forEach(b=>{b.innerHTML='<svg viewBox="0 0 24 24">'+eye+(hid?'<path d="M4 4l16 16"/>':'')+'</svg>';b.classList.toggle('on',hid);b.setAttribute('aria-pressed',hid);b.setAttribute('aria-label',hid?'Tampilkan halaman':'Sembunyikan halaman')});
+const paint=()=>bs.forEach(b=>{b.innerHTML='<svg viewBox="0 0 24 24">'+eye+(hid?'<path d="M4 4l16 16"/>':'')+'</svg><span>'+(hid?'Tampilkan halaman':'Sembunyikan halaman')+'</span>';b.classList.toggle('on',hid);b.setAttribute('aria-pressed',hid);b.setAttribute('aria-label',hid?'Tampilkan halaman':'Sembunyikan halaman')});
 const apply=()=>{document.body.classList.toggle('hid',hid&&!peek);paint()};
 try{hid=localStorage.getItem('quran.hide')==='1'}catch(e){}
 bs.forEach(b=>{
@@ -537,7 +618,7 @@ const sa=g=>{const s=surahOf(g);return[s,g-cum[s-1]]};
 const gk=(s,a)=>cum[s-1]+a;
 const url=g=>{const[s,a]=sa(g);return BASE+pad(s)+pad(a)+'.mp3'};
 
-$('abtn').innerHTML=svg(I.spk);
+$('abtn').innerHTML=svg(I.spk)+'<span>Mode murattal</span>';
 $('aprev').innerHTML=svg(I.prev);$('anext').innerHTML=svg(I.next);$('astop').innerHTML=svg(I.stop);$('aopt').innerHTML=svg(I.set);
 
 // ---------- pemutar ----------
@@ -628,12 +709,40 @@ window.audOv=async(h,im)=>{
   }
   h.appendChild(ov);h.__o={ov,im};place(h);ro&&ro.observe(h);
 };
-// fase capture: ketukan pada ayat memutar audio dan tidak ikut memunculkan/menyembunyikan bilah
-$('track').addEventListener('click',e=>{
+// ---------- tekan lama ayat: putar, tandai, bagikan ----------
+const trk=$('track'),ash=$('ash');
+let lpT=0,lpX=0,lpY=0,lpFired=false,lk=null;
+const clearLp=()=>{clearTimeout(lpT);lpT=0};
+function paintAct(){const on=bm().includes(cur);$('abm').querySelector('span').textContent=on?'Hapus penanda halaman':'Tandai halaman';$('abm').classList.toggle('on',on)}
+function openAct(k){
+  lk=k;const[s1,a1]=k.split(':').map(Number);
+  $('asht').textContent='QS '+SN[s1-1]+' : '+a1;paintAct();ash.hidden=false;
+}
+trk.addEventListener('pointerdown',e=>{
+  lpFired=false;clearLp();
+  const i=e.target.closest&&e.target.closest('.ao i');if(!i||e.button>0)return;
+  lpX=e.clientX;lpY=e.clientY;
+  lpT=setTimeout(()=>{lpT=0;lpFired=true;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}openAct(i.dataset.k)},450);
+});
+trk.addEventListener('pointermove',e=>{if(lpT&&Math.hypot(e.clientX-lpX,e.clientY-lpY)>10)clearLp()});
+['pointerup','pointercancel','pointerleave'].forEach(n=>trk.addEventListener(n,clearLp));
+trk.addEventListener('scroll',clearLp,{passive:true});
+// fase capture: tekan lama tidak memicu ketukan; ketukan pada ayat (mode murattal) memutar audio dan tidak memunculkan/menyembunyikan bilah
+trk.addEventListener('click',e=>{
+  if(lpFired){lpFired=false;e.stopPropagation();e.preventDefault();return}
   if(!document.body.classList.contains('aud'))return;
   const i=e.target.closest&&e.target.closest('.ao i');if(!i)return;
   e.stopPropagation();tap(i.dataset.k);
 },true);
+ash.addEventListener('click',e=>{if(e.target===ash)ash.hidden=true});
+$('aph').onclick=()=>{ash.hidden=true;if(!S.on){S.on=true;save();applyMode()}tap(lk)};
+$('abm').onclick=()=>{$('bmbtn').click();ash.hidden=true};
+$('ashare').onclick=async()=>{
+  ash.hidden=true;const[s1,a1]=lk.split(':').map(Number);
+  const u=location.origin+location.pathname+'?s='+s1+'&a='+a1,tx='QS '+SN[s1-1]+' : '+a1;
+  try{if(navigator.share){await navigator.share({title:tx,text:tx,url:u});return}}catch(x){if(x&&x.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(tx+'\n'+u);toast('Tautan disalin')}catch(x){toast('Tidak bisa membagikan')}
+};
 
 // ---------- pengaturan ----------
 const rsS=$('rs_s'),rsA=$('rs_a'),reS=$('re_s'),reA=$('re_a');
