@@ -272,7 +272,7 @@ async function start(){
   if(rec)return;
   if(!navigator.mediaDevices||!window.MediaRecorder){note('Browser ini belum mendukung perekaman');return}
   stopAudio();
-  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:false}})}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:false,autoGainControl:false}})}
   catch(e){note('Izinkan akses mikrofon (perlu HTTPS)');return}
   const chunks=[];
   const mr=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:128000}:{audioBitsPerSecond:128000});
