@@ -21,10 +21,11 @@ header select{min-width:0;max-width:30vw;padding:9px 6px}
 #bmbtn.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #bmbtn.on svg{fill:var(--goldink);stroke:var(--goldink)}
 /* Bilah disembunyikan; muncul saat layar diketuk */
-header,#ind{position:fixed;left:0;right:0;z-index:5;background:var(--surface);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease}
+header,#bot{position:fixed;left:0;right:0;z-index:5;background:var(--surface);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease}
 header{top:0;transform:translateY(-100%);display:flex;direction:rtl;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px))}
-#ind{bottom:0;transform:translateY(100%);text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);border-top:1px solid var(--line);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px))}
-body.ui header,body.ui #ind{transform:none;opacity:1;pointer-events:auto}
+#bot{bottom:0;transform:translateY(100%);border-top:1px solid var(--line)}
+#ind{text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px))}
+body.ui header,body.ui #bot{transform:none;opacity:1;pointer-events:auto}
 #track{position:fixed;inset:0;display:flex;direction:rtl;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
 #track::-webkit-scrollbar{display:none}
 .pg{background:#FDFCF5;flex:0 0 100%;width:100%;height:100%;position:relative;scroll-snap-align:center;scroll-snap-stop:always;display:flex;direction:rtl;text-align:center;color:var(--muted);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
@@ -42,29 +43,30 @@ body.ui header,body.ui #ind{transform:none;opacity:1;pointer-events:auto}
 #dlbar{width:100%;accent-color:var(--primary)}
 #dlgo{background:var(--primary);color:var(--on);border-color:var(--primary)}
 
-/* Perekam bacaan */
-#rc{position:fixed;z-index:4;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:row-reverse;align-items:center;gap:8px;direction:ltr;transition:bottom .22s ease}
-body.ui #rc{bottom:calc(42px + env(safe-area-inset-bottom,0px))}
-.rb{width:42px;height:42px;padding:0;border-radius:50%;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+/* Perekam bacaan: ada di bilah bawah (muncul saat layar diketuk), jadi tidak pernah menimpa gambar halaman */
+#rc{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 8px;padding:8px 10px 2px;direction:ltr}
+.rb{width:40px;height:40px;padding:0;border-radius:50%;display:grid;place-items:center}
 .rb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
-#rfab{width:54px;height:54px;background:var(--primary);color:var(--on);border-color:var(--primary);transition:box-shadow .08s linear}
+#rfab{width:48px;height:48px;background:var(--primary);color:var(--on);border-color:var(--primary);transition:box-shadow .08s linear}
 #rfab svg{width:24px;height:24px}
-#rfab.rec{background:#C0392B;border-color:#C0392B;box-shadow:0 0 0 calc(var(--lv,0)*14px) rgba(192,57,43,.35)}
-#rt{font:600 13px system-ui,sans-serif;font-variant-numeric:tabular-nums;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:6px 11px;max-width:60vw}
+#rfab.rec{background:#C0392B;border-color:#C0392B;box-shadow:0 0 0 calc(var(--lv,0)*10px) rgba(192,57,43,.35)}
+#rt{order:-1;flex:0 0 100%;text-align:center;font:600 13px system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--ink)}
 #rtools{display:flex;gap:8px}
 #rt[hidden],#rtools[hidden]{display:none}
-@media(orientation:landscape){
- #rc,body.ui #rc{top:50%;bottom:auto;transform:translateY(-50%);flex-direction:column-reverse}
- #rtools{flex-direction:column}
- #rfab{width:46px;height:46px}.rb{width:38px;height:38px}
-}
+#reye{display:none} /* tombol mata sudah ada di bilah atas */
 /* Sembunyikan halaman (murojaah tanpa melihat) */
 body.hid .h{visibility:hidden}
 #hbtn{flex:none;padding:8px;display:grid;place-items:center}
 #hbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 #hbtn.on,#reye.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #hbtn,#reye{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
-#rgain{font:700 13px system-ui,sans-serif}
+#rg{display:flex;align-items:center;height:40px;padding:0 2px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:99px}
+#rg button{width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;box-shadow:none;font:700 18px/1 system-ui,sans-serif}
+#rg button:disabled{opacity:.3}
+#rgain{min-width:34px;text-align:center;font:700 13px system-ui,sans-serif;font-variant-numeric:tabular-nums}
+#rnr{font:700 10px/1.15 system-ui,sans-serif}
+#rnr.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
+#rfab:disabled{opacity:.6}
 </style></head><body>
 <header>
   <a id="homebtn" href="index.html" aria-label="Kembali ke halaman awal"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg></a>
@@ -77,10 +79,10 @@ body.hid .h{visibility:hidden}
   <select id="sel" aria-label="Halaman"></select>
 </header>
 <main id="track"></main>
-<div id="ind"></div>
+
 <div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
-<div id="rc"><button id="rfab" class="rb" aria-label="Rekam bacaan"></button><button id="reye" class="rb"></button><button id="rgain" class="rb" aria-label="Penguatan suara"></button><span id="rt" hidden></span>
-<div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div></div>
+<div id="bot"><div id="rc"><button id="rfab" class="rb" aria-label="Rekam bacaan"></button><button id="reye" class="rb"></button><div id="rg" role="group" aria-label="Penguatan suara"><button id="rgm" aria-label="Kurangi penguatan">−</button><span id="rgain" aria-live="polite"></span><button id="rgp" aria-label="Tambah penguatan">+</button></div><button id="rnr" class="rb" aria-label="Peredam bising"></button><span id="rt" hidden></span>
+<div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div></div><div id="ind"></div></div>
 <script src="config.js"></script>
 <script>
 const C=CFG,$=id=>document.getElementById(id),T=C.total,src=C.src;
@@ -241,11 +243,24 @@ const fab=$('rfab'),tools=$('rtools'),rt=$('rt'),play=$('rplay'),mem={};
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={mic:'<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',pause:'<path d="M9 5v14M15 5v14"/>'};
 fab.innerHTML=svg(I.mic);play.innerHTML=svg(I.play);
-// penguatan suara saat merekam (ketuk untuk ganti 1x-4x)
-const gb=$('rgain'),GL=[1,1.5,2,3,4];let gv=1.5,gainNode=null;
-try{const x=+localStorage.getItem('quran.gain');if(GL.includes(x))gv=x}catch(e){}
-const gpaint=()=>{gb.textContent=gv+'×'};gpaint();
-gb.onclick=()=>{gv=GL[(GL.indexOf(gv)+1)%GL.length];try{localStorage.setItem('quran.gain',gv)}catch(e){}gpaint();if(gainNode)gainNode.gain.value=gv};
+// penguatan suara (tombol - / +, tidak berputar) dan peredam bising bertingkat
+const gb=$('rgain'),gm=$('rgm'),gp=$('rgp'),nb=$('rnr'),GL=[1,1.5,2,3,4];
+let gi=1,gv=GL[gi],gainNode=null;
+try{const i=GL.indexOf(+localStorage.getItem('quran.gain'));if(i>=0)gi=i}catch(e){}
+gv=GL[gi];
+const gpaint=()=>{gb.textContent=gv+'\u00d7';gm.disabled=gi===0;gp.disabled=gi===GL.length-1;$('rg').setAttribute('aria-label','Penguatan suara '+gv+'\u00d7')};
+const gset=d=>{const n=Math.max(0,Math.min(GL.length-1,gi+d));if(n===gi)return;gi=n;gv=GL[gi];try{localStorage.setItem('quran.gain',gv)}catch(e){}gpaint();if(gainNode&&ctx)gainNode.gain.setTargetAtTime(gv,ctx.currentTime,.05)};
+gm.onclick=()=>gset(-1);gp.onclick=()=>gset(1);gpaint();
+// peredam bising: filter + gerbang adaptif (k = pengali ambang di atas noise latar, d = pelemahan saat senyap)
+const NL=[{n:'Mati',s:'Mati',hp:80,lp:0,k:0,d:1},{n:'Ringan',s:'Ring',hp:100,lp:12000,k:0,d:1},{n:'Sedang',s:'Sedg',hp:120,lp:10000,k:2.5,d:.5},{n:'Kuat',s:'Kuat',hp:140,lp:9000,k:3.5,d:.25}];
+let nv=1,nrn=null;
+try{const x=localStorage.getItem('quran.nr');if(x!==null&&NL[+x])nv=+x}catch(e){}
+const npaint=()=>{nb.innerHTML='<span>NR</span><span>'+NL[nv].s+'</span>';nb.setAttribute('aria-label','Peredam bising: '+NL[nv].n+'. Ketuk untuk ganti');nb.classList.toggle('on',nv>0)};
+nb.onclick=()=>{nv=(nv+1)%NL.length;try{localStorage.setItem('quran.nr',nv)}catch(e){}npaint();
+  if(nrn&&ctx){const L=NL[nv],t=ctx.currentTime,ny=ctx.sampleRate*.45;nrn.hp.frequency.setTargetAtTime(L.hp,t,.05);nrn.lp.frequency.setTargetAtTime(Math.min(L.lp||ny,ny),t,.05)}};
+npaint();
+// tab di latar belakang: timer melambat, jadi gerbang dibuka penuh agar tidak ada suara terpotong
+const onvis=()=>{if(nrn&&ctx&&document.hidden){nrn.gt=1;try{nrn.gate.gain.cancelScheduledValues(0);nrn.gate.gain.setValueAtTime(1,ctx.currentTime)}catch(e){}}};
 $('rredo').innerHTML=svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>');
 $('rdl').innerHTML=svg('<path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/>');
 $('rdel').innerHTML=svg('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>');
@@ -256,7 +271,7 @@ const put=async(k,v)=>{mem[k]=v;await tx('readwrite',s=>s.put(v,k))};
 const del=async k=>{delete mem[k];await tx('readwrite',s=>s.delete(k))};
 const mime=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'':'';
 const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
-let rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,pctx=null,recPeak=0,audio=null,url=null,mt;
+let busy=false,rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,pctx=null,recPeak=0,audio=null,url=null,mt;
 function note(t){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},3500)}
 function stopAudio(){const a=audio;audio=null;playKey=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
 // Cari rekaman untuk halaman n: potret (halaman n) dan landscape (pasangan n,n+1) saling dikenali.
@@ -277,59 +292,106 @@ async function sync(n){
   data=r?r.v:null;dataKey=r?r.k:null;tools.hidden=!r;
 }
 window.recSync=n=>{sync(n)};
-function cleanup(){
-  cancelAnimationFrame(raf);
-  stream&&stream.getTracks().forEach(t=>t.stop());
-  ctx&&ctx.close().catch(()=>{});gainNode=null;
-  fab.classList.remove('rec');fab.style.removeProperty('--lv');fab.innerHTML=svg(I.mic);
-  fab.setAttribute('aria-label','Rekam bacaan');rt.hidden=true;
+// Tanda sedang merekam tanpa tombol di atas halaman: warna bilah status + judul tab
+const tcm=document.querySelector('meta[name=theme-color]'),tcOrig=tcm&&tcm.content,ttl0=document.title;
+function recMark(on){if(tcm)tcm.content=on?'#C0392B':tcOrig;document.title=on?'\u25cf Merekam \u00b7 '+ttl0:ttl0}
+let hideT=0;
+$('bot').addEventListener('pointerdown',()=>clearTimeout(hideT));
+function release(){
+  recMark(false);clearTimeout(hideT);
+  clearInterval(raf);raf=0;
+  stream&&stream.getTracks().forEach(t=>{t.onended=null;t.stop()});stream=null;
+  ctx&&ctx.close().catch(()=>{});ctx=null;gainNode=null;nrn=null;
+  document.removeEventListener('visibilitychange',onvis);
 }
-async function start(){
-  if(rec)return;
-  if(!navigator.mediaDevices||!window.MediaRecorder){note('Browser ini belum mendukung perekaman');return}
-  stopAudio();
+function resetUI(){
+  fab.classList.remove('rec');fab.style.removeProperty('--lv');fab.innerHTML=svg(I.mic);
+  fab.setAttribute('aria-label','Rekam bacaan');fab.disabled=false;rt.hidden=true;
+}
+// Menyiapkan mikrofon + rantai audio. Mengembalikan teks error, atau null jika berhasil.
+async function begin(){
   // semua pemrosesan bawaan browser dimatikan: pembatal gema membatasi suara sampai ~8 kHz dan membisukan jeda
   stream=null;
   try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}
   catch(e){
     if(e&&e.name==='OverconstrainedError'){try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}catch(e2){}}
   }
-  if(!stream){note('Izinkan akses mikrofon (perlu HTTPS)');return}
+  if(!stream)return 'Izinkan akses mikrofon (perlu HTTPS)';
   const chunks=[];
-  // mikrofon -> filter rumble 80 Hz -> penguat -> pembatas (agar tidak pecah) -> sisa ruang puncak -> direkam (Opus 192 / AAC 256 kbps)
+  // mikrofon -> high-pass -> low-pass -> [deteksi] -> tunda 60 ms -> gerbang -> penguat -> pembatas -> direkam
   {const A=window.AudioContext||window.webkitAudioContext;try{ctx=new A({latencyHint:'playback'})}catch(e){ctx=new A()}}ctx.resume&&ctx.resume();
-  const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=80;hp.Q.value=.707;
+  const L0=NL[nv],ny=ctx.sampleRate*.45;
+  const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=L0.hp;hp.Q.value=.707;
+  const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=Math.min(L0.lp||ny,ny);lp.Q.value=.707;
+  const det=ctx.createAnalyser();det.fftSize=2048;const dbuf=new Float32Array(2048);
+  const dl=ctx.createDelay(.2);dl.delayTime.value=.06; // gerbang sempat membuka sebelum awal kata tiba
+  const gate=ctx.createGain();gate.gain.value=1;
   const g=ctx.createGain();g.gain.value=gv;gainNode=g;
   const lim=ctx.createDynamicsCompressor();lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.003;lim.release.value=.15;
   const dest=ctx.createMediaStreamDestination();dest.channelCount=1;dest.channelCountMode='explicit';
-  const an=ctx.createAnalyser();an.fftSize=1024;const fbuf=new Float32Array(1024);
+  const an=ctx.createAnalyser();an.fftSize=2048;const fbuf=new Float32Array(2048); // 2048 sampel (~43 ms) > interval timer, jadi puncak tidak terlewat
   const og=ctx.createGain();og.gain.value=.89; // sisakan ~1 dB di bawah batas
-  ctx.createMediaStreamSource(stream).connect(hp);hp.connect(g);g.connect(lim);lim.connect(og);og.connect(dest);og.connect(an);
+  ctx.createMediaStreamSource(stream).connect(hp);hp.connect(lp);lp.connect(det);lp.connect(dl);dl.connect(gate);gate.connect(g);g.connect(lim);lim.connect(og);og.connect(dest);og.connect(an);
+  nrn={hp,lp,gate,gt:1};document.addEventListener('visibilitychange',onvis);
   const mr=new MediaRecorder(dest.stream,mime?{mimeType:mime,audioBitsPerSecond:/mp4/.test(mime)?256000:192000}:{audioBitsPerSecond:192000});
   rec=mr;recPeak=0;recPage=cur;recSpan=spread?2:1;replaceKey=dataKey;t0=Date.now();
   mr.ondataavailable=e=>{e.data&&e.data.size&&chunks.push(e.data)};
+  mr.onerror=()=>{try{mr.state!=='inactive'&&mr.stop()}catch(e){}};
+  stream.getAudioTracks().forEach(t=>{t.onended=()=>{try{mr.state==='recording'&&mr.stop()}catch(e){}}});
   mr.onstop=async()=>{
     const type=mr.mimeType||mime||'audio/webm',dur=(Date.now()-t0)/1000;
-    cleanup();
-    await put(recPage,{blob:new Blob(chunks,{type}),type,dur,span:recSpan,peak:recPeak,ts:Date.now()});
-    if(replaceKey!=null&&replaceKey!==recPage)await del(replaceKey);
-    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-    rec=null;sync(cur);
+    release(); // mikrofon langsung mati; tombol dikunci sampai rekaman tersimpan
+    fab.disabled=true;fab.classList.remove('rec');fab.style.removeProperty('--lv');rt.hidden=false;rt.textContent='Menyimpan\u2026';
+    try{
+      if(chunks.length){
+        await put(recPage,{blob:new Blob(chunks,{type}),type,dur,span:recSpan,peak:recPeak,ts:Date.now()});
+        if(replaceKey!=null&&replaceKey!==recPage)await del(replaceKey);
+      }
+      navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+    }catch(e){}
+    rec=null;resetUI();sync(cur);
   };
-  // meteran level suara
+  // meteran level + gerbang bising (timer, bukan rAF, agar tetap jalan saat layar redup)
+  let floor=0,open=true,hold=0;
   const tick=()=>{
-    an.getFloatTimeDomainData(fbuf);let m=0;for(const x of fbuf){const v=Math.abs(x);if(v>m)m=v}
+    an.getFloatTimeDomainData(fbuf);let m=0;for(let i=0;i<fbuf.length;i++){const v=Math.abs(fbuf[i]);if(v>m)m=v}
     if(m>recPeak)recPeak=m;
+    const Lv=NL[nv],el=(Date.now()-t0)/1000;
+    if(!document.hidden&&nrn){
+      det.getFloatTimeDomainData(dbuf);let s=0;for(let i=0;i<dbuf.length;i++)s+=dbuf[i]*dbuf[i];const r=Math.sqrt(s/dbuf.length);
+      // noise latar: dipelajari cepat di 1,2 detik pertama, lalu turun cepat / naik pelan
+      if(el<1.2)floor=floor?floor*.9+r*.1:r;else floor=r<floor?floor*.5+r*.5:Math.min(floor*1.0025,.02);
+      floor=Math.max(floor,1e-4);
+      let tgt=1;
+      if(Lv.k&&el>=1.2){
+        const th=Math.max(floor*Lv.k,.004),now=performance.now();
+        if(r>th)hold=now+250;
+        open=r>th*(open?.7:1)||now<hold;
+        tgt=open?1:Lv.d;
+      }
+      if(tgt!==nrn.gt){nrn.gt=tgt;gate.gain.setTargetAtTime(tgt,ctx.currentTime,tgt===1?.006:.25)}
+    }
     fab.style.setProperty('--lv',Math.min(1,m/.7).toFixed(2));
-    const el=(Date.now()-t0)/1000;
-    rt.textContent='● '+fmt(el)+(lim.reduction<-6?' · terlalu keras, kurangi penguatan':(el>3&&recPeak<.03?' · suara pelan, dekatkan mikrofon':''));
-    raf=requestAnimationFrame(tick);
+    rt.textContent='\u25cf '+fmt(el)+' \u00b7 '+gv+'\u00d7'+(Lv.k||Lv.lp?' \u00b7 '+Lv.n:'')+(lim.reduction<-6?' \u00b7 terlalu keras, kurangi penguatan':(el>3&&recPeak<.03?' \u00b7 suara pelan, dekatkan mikrofon':''));
   };
-  fab.classList.add('rec');fab.innerHTML=svg(I.stop);fab.setAttribute('aria-label','Berhenti merekam');
+  fab.classList.add('rec');fab.innerHTML=svg(I.stop);fab.setAttribute('aria-label','Berhenti merekam');fab.disabled=false;
   tools.hidden=true;rt.hidden=false;
-  mr.start(1000);tick();
+  mr.start(1000);raf=setInterval(tick,30);tick();
+  recMark(true);
+  hideT=setTimeout(()=>{if(rec&&rec.state==='recording')document.body.classList.remove('ui')},3000); // bersihkan layar agar halaman terlihat penuh
+  return null;
 }
-fab.onclick=()=>rec?rec.stop():start();
+async function start(){
+  if(rec||busy)return;
+  if(!navigator.mediaDevices||!window.MediaRecorder){note('Browser ini belum mendukung perekaman');return}
+  busy=true;stopAudio();
+  tools.hidden=true;fab.disabled=true;rt.hidden=false;rt.textContent='Membuka mikrofon\u2026'; // kunci semua tombol sejak ketukan pertama
+  let err=null;
+  try{err=await begin()}catch(e){err='Gagal memulai perekaman'}
+  busy=false;
+  if(err){release();rec=null;resetUI();sync(cur);note(err)}
+}
+fab.onclick=()=>{if(rec){if(rec.state==='recording')rec.stop()}else start()};
 $('rredo').onclick=start;
 play.onclick=()=>{
   if(audio){audio.paused?audio.play():audio.pause();return}
