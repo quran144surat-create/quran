@@ -67,12 +67,44 @@ body.hid .h{visibility:hidden}
 #rnr{font:700 10px/1.15 system-ui,sans-serif}
 #rnr.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #rfab:disabled{opacity:.6}
+
+/* Murattal: kotak ayat di atas gambar, pemutar mengambang, pengaturan ulang & rentang */
+.h{position:relative}
+.ao{position:absolute;pointer-events:none;direction:ltr}
+.ao i{position:absolute;border-radius:5px;pointer-events:none}
+body.aud .ao i{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:rgba(214,170,40,.3)}
+.ao i.on{background:rgba(214,170,40,.36)}
+#abtn{flex:none;padding:8px;display:grid;place-items:center}
+#abtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+#abtn.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
+#ap{position:fixed;z-index:4;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:none;flex-direction:column;align-items:center;gap:8px;direction:ltr;pointer-events:none;transition:bottom .22s ease}
+body.aud #ap{display:flex}
+body.ui #ap{bottom:calc(var(--bh,96px) + 10px)}
+#ap>*{pointer-events:auto}
+#apb{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 6px;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:calc(100vw - 16px)}
+#apb .rb{flex:none}
+#aplay{background:var(--primary);color:var(--on);border-color:var(--primary)}
+#aopt.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
+#alb{min-width:84px;max-width:38vw;padding:0 6px;text-align:center;font:600 12.5px system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#aset{width:min(360px,calc(100vw - 16px));display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:left}
+#aset[hidden],#arb[hidden],#at[hidden]{display:none}
+#aset .al{font:600 12.5px system-ui,sans-serif;color:var(--muted)}
+#aset .sw{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13.5px}
+#aset .sw input{width:18px;height:18px;accent-color:var(--primary)}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:9px 4px}
+.seg button.on{background:var(--primary);color:var(--on);border-color:var(--primary)}
+#arb{display:grid;gap:6px}
+.ar{display:grid;grid-template-columns:1fr 84px;gap:6px}
+.ar select{min-width:0;max-width:none;width:100%}
+#at{background:var(--ink);color:var(--bg);border-radius:99px;padding:7px 14px;font:600 12.5px system-ui,sans-serif;max-width:calc(100vw - 24px);text-align:center}
 </style></head><body>
 <header>
   <a id="homebtn" href="index.html" aria-label="Kembali ke halaman awal"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg></a>
   <h1 id="ttl">Juz 1</h1><span class="pill" id="info" hidden></span>
   <button id="bmbtn" aria-label="Tandai halaman ini"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg></button>
   <button id="hbtn"></button>
+  <button id="abtn" aria-label="Murattal" aria-pressed="false"></button>
   <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></button>
   <select id="jsel" aria-label="Juz"></select>
   <select id="ssel" aria-label="Surat"></select>
@@ -83,6 +115,27 @@ body.hid .h{visibility:hidden}
 <div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
 <div id="bot"><div id="rc"><button id="rfab" class="rb" aria-label="Rekam bacaan"></button><button id="reye" class="rb"></button><div id="rg" role="group" aria-label="Penguatan suara"><button id="rgm" aria-label="Kurangi penguatan">−</button><span id="rgain" aria-live="polite"></span><button id="rgp" aria-label="Tambah penguatan">+</button></div><button id="rnr" class="rb" aria-label="Peredam bising"></button><span id="rt" hidden></span>
 <div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div></div><div id="ind"></div></div>
+<div id="ap">
+  <div id="at" hidden role="status"></div>
+  <div id="aset" hidden>
+    <div class="al">Ulangi tiap ayat</div>
+    <div class="seg" id="arep"><button data-r="1">1&times;</button><button data-r="2">2&times;</button><button data-r="3">3&times;</button><button data-r="0">Tanpa batas</button></div>
+    <label class="sw"><input type="checkbox" id="arng"> Atur rentang ayat</label>
+    <div id="arb" hidden>
+      <div class="al">Mulai</div><div class="ar"><select id="rs_s" aria-label="Surat mulai"></select><select id="rs_a" aria-label="Ayat mulai"></select></div>
+      <div class="al">Selesai</div><div class="ar"><select id="re_s" aria-label="Surat selesai"></select><select id="re_a" aria-label="Ayat selesai"></select></div>
+      <button id="apg">Isi dari halaman ini</button>
+    </div>
+  </div>
+  <div id="apb">
+    <button id="aprev" class="rb" aria-label="Ayat sebelumnya"></button>
+    <button id="aplay" class="rb" aria-label="Putar murattal"></button>
+    <button id="anext" class="rb" aria-label="Ayat berikutnya"></button>
+    <button id="astop" class="rb" aria-label="Berhenti"></button>
+    <span id="alb">Murattal</span>
+    <button id="aopt" class="rb" aria-label="Pengaturan murattal"></button>
+  </div>
+</div>
 <script src="config.js"></script>
 <script>
 const C=CFG,$=id=>document.getElementById(id),T=C.total,src=C.src;
@@ -111,7 +164,7 @@ const start=n=>spread?(n%2?n:n-1):n;
 
 function loadImg(h){
   if(h.dataset.done)return;h.dataset.done=1;loaded.add(h);const n=+h.dataset.p;
-  const im=new Image();im.alt='Halaman '+n;
+  const im=new Image();im.alt='Halaman '+n;im.addEventListener('load',()=>window.audOv&&audOv(h,im));
   im.onerror=()=>{h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>'};
   const u=src(n);try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}
   im.src=u;h.appendChild(im);
@@ -384,7 +437,7 @@ async function begin(){
 async function start(){
   if(rec||busy)return;
   if(!navigator.mediaDevices||!window.MediaRecorder){note('Browser ini belum mendukung perekaman');return}
-  busy=true;stopAudio();
+  busy=true;stopAudio();window.audHalt&&audHalt();
   tools.hidden=true;fab.disabled=true;rt.hidden=false;rt.textContent='Membuka mikrofon\u2026'; // kunci semua tombol sejak ketukan pertama
   let err=null;
   try{err=await begin()}catch(e){err='Gagal memulai perekaman'}
@@ -453,5 +506,167 @@ const on=async()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)on()});
 ['pointerdown','keydown','touchend'].forEach(t=>addEventListener(t,on,{passive:true}));
 on();
+})();
+
+// Murattal Syeikh Muhammad Ayyub (everyayah.com): ketuk ayat -> putar dari ayat itu, ulangi tiap ayat, atur rentang.
+// Kotak ayat dibaca dari ayah-boxes-P.json / ayah-boxes-L.json (tidak diubah, harus satu folder dengan mushaf.html).
+(()=>{
+const BASE='https://everyayah.com/data/Muhammad_Ayyoub_128kbps/',KEY='quran.aud';
+const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
+const I={
+  spk:'<path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',
+  pause:'<path d="M9 5v14M15 5v14"/>',
+  prev:'<path d="M6 5v14"/><path d="M19 5v14L9 12z" fill="currentColor"/>',
+  next:'<path d="M18 5v14"/><path d="M5 5v14l10-7z" fill="currentColor"/>',
+  stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',
+  set:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'
+};
+const cl=x=>Math.min(TA,Math.max(1,Math.round(+x)||1));
+let S={on:false,rep:1,rng:false,rs:1,re:TA};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+S.rs=cl(S.rs);S.re=Math.max(S.rs,cl(S.re));if(![0,1,2,3].includes(S.rep))S.rep=1;S.on=!!S.on;S.rng=!!S.rng;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const pad=n=>String(n).padStart(3,'0');
+const sa=g=>{const s=surahOf(g);return[s,g-cum[s-1]]};
+const gk=(s,a)=>cum[s-1]+a;
+const url=g=>{const[s,a]=sa(g);return BASE+pad(s)+pad(a)+'.mp3'};
+
+$('abtn').innerHTML=svg(I.spk);
+$('aprev').innerHTML=svg(I.prev);$('anext').innerHTML=svg(I.next);$('astop').innerHTML=svg(I.stop);$('aopt').innerHTML=svg(I.set);
+
+// ---------- pemutar ----------
+const A=new Audio(),warm=new Audio();A.preload='auto';warm.preload='auto';
+let g=0,rep=0,act=false,tt;
+const endG=()=>S.rng?S.re:TA,begG=()=>S.rng?S.rs:1;
+const recording=()=>$('rfab').classList.contains('rec');
+function toast(m){const e=$('at');e.textContent=m;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{e.hidden=true},3000)}
+function paintPlay(){const pl=act&&!A.paused;$('aplay').innerHTML=svg(pl?I.pause:I.play);$('aplay').setAttribute('aria-label',pl?'Jeda':'Putar murattal')}
+function label(){
+  const l=$('alb');if(!act){l.textContent='Murattal';return}
+  const[s,a]=sa(g);
+  l.textContent=SN[s-1]+' '+a+(S.rep===0?' \u221e':S.rep>1?' ('+Math.min(rep+1,S.rep)+'/'+S.rep+')':'');
+}
+function mark(){
+  document.querySelectorAll('.ao i.on').forEach(n=>n.classList.remove('on'));
+  if(act&&g){const[s,a]=sa(g);document.querySelectorAll('.ao i[data-k="'+s+':'+a+'"]').forEach(n=>n.classList.add('on'))}
+}
+function follow(){const[s,a]=sa(g),p=pageOfAyah(s,a);if(start(p)!==cur)goto(p,true)}
+function meta(){
+  if(!('mediaSession' in navigator))return;
+  const[s,a]=sa(g);
+  try{navigator.mediaSession.metadata=new MediaMetadata({title:SN[s-1]+' : '+a,artist:'Syeikh Muhammad Ayyub',album:'Murattal'})}catch(e){}
+}
+function warmNext(){if(g<endG())warm.src=url(g+1)}
+function load(n){
+  g=n;rep=0;act=true;A.loop=S.rep===0;A.src=url(g);
+  A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar');paintPlay()}});
+  mark();follow();label();meta();paintPlay();warmNext();
+}
+function halt(){
+  if(!act)return;
+  act=false;g=0;A.pause();A.removeAttribute('src');A.load();
+  mark();label();paintPlay();
+}
+window.audHalt=halt;
+A.onplay=A.onpause=paintPlay;
+A.onerror=()=>{if(act){toast('Audio tidak dapat dimuat. Periksa koneksi internet.');paintPlay()}};
+A.onended=()=>{
+  rep++;
+  if(S.rep===0||rep<S.rep){label();A.currentTime=0;A.play().catch(()=>{});return}
+  if(g>=endG()){halt();return}
+  load(g+1);
+};
+function firstHere(){return C.ps[cur-1]||1}
+function tap(k){
+  const[s,a]=k.split(':').map(Number),n=gk(s,a);
+  if(recording()){toast('Hentikan rekaman dulu');return}
+  if(S.rng&&(n<S.rs||n>S.re)){toast('Ayat ini di luar rentang. Ubah rentang di pengaturan.');return}
+  load(n);
+}
+$('aplay').onclick=()=>{
+  if(recording()){toast('Hentikan rekaman dulu');return}
+  if(!act)load(S.rng?S.rs:firstHere());
+  else A.paused?A.play().catch(()=>{}):A.pause();
+};
+$('aprev').onclick=()=>{if(act)load(Math.max(begG(),g-1))};
+$('anext').onclick=()=>{if(!act)return;g<endG()?load(g+1):halt()};
+$('astop').onclick=halt;
+if('mediaSession' in navigator){
+  const ms=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch(e){}};
+  ms('play',()=>{act&&A.play().catch(()=>{})});ms('pause',()=>{A.pause()});
+  ms('previoustrack',()=>$('aprev').click());ms('nexttrack',()=>$('anext').click());ms('stop',halt);
+}
+
+// ---------- kotak ayat di atas gambar ----------
+const pr={};
+const getBoxes=m=>pr[m]||(pr[m]=fetch('ayah-boxes-'+m+'.json').then(r=>r.ok?r.json():{}).catch(()=>({})));
+function place(h){
+  const o=h.__o;if(!o||!o.im.isConnected||!o.im.naturalWidth)return;
+  const hb=h.getBoundingClientRect(),ib=o.im.getBoundingClientRect(),nw=o.im.naturalWidth,nh=o.im.naturalHeight;
+  const sc=Math.min(ib.width/nw,ib.height/nh),cw=nw*sc,ch=nh*sc,st=o.ov.style;
+  st.left=(ib.left-hb.left+(ib.width-cw)/2)+'px';st.top=(ib.top-hb.top+(ib.height-ch)/2)+'px';
+  st.width=cw+'px';st.height=ch+'px';
+}
+const ro=window.ResizeObserver?new ResizeObserver(es=>es.forEach(e=>place(e.target))):null;
+window.audOv=async(h,im)=>{
+  const B=(await getBoxes(spread?'L':'P'))[String(h.dataset.p)];
+  if(!B||!im.isConnected)return;
+  const old=h.querySelector('.ao');if(old)old.remove();
+  const ov=document.createElement('div');ov.className='ao';
+  const now=act&&g?sa(g).join(':'):'';
+  for(const k in B)for(const r of B[k]){
+    const i=document.createElement('i');i.dataset.k=k;
+    i.style.cssText='left:'+r[0]+'%;top:'+r[1]+'%;width:'+r[2]+'%;height:'+r[3]+'%';
+    if(k===now)i.className='on';
+    ov.appendChild(i);
+  }
+  h.appendChild(ov);h.__o={ov,im};place(h);ro&&ro.observe(h);
+};
+// fase capture: ketukan pada ayat memutar audio dan tidak ikut memunculkan/menyembunyikan bilah
+$('track').addEventListener('click',e=>{
+  if(!document.body.classList.contains('aud'))return;
+  const i=e.target.closest&&e.target.closest('.ao i');if(!i)return;
+  e.stopPropagation();tap(i.dataset.k);
+},true);
+
+// ---------- pengaturan ----------
+const rsS=$('rs_s'),rsA=$('rs_a'),reS=$('re_s'),reA=$('re_a');
+SN.forEach((n,i)=>{rsS.add(new Option((i+1)+'. '+n,i+1));reS.add(new Option((i+1)+'. '+n,i+1))});
+function fillA(sel,s){const n=C.ay[s-1];if(sel.options.length!==n){sel.replaceChildren();for(let a=1;a<=n;a++)sel.add(new Option(a,a))}}
+function paintRange(){
+  const[s1,a1]=sa(S.rs),[s2,a2]=sa(S.re);
+  rsS.value=s1;fillA(rsA,s1);rsA.value=a1;reS.value=s2;fillA(reA,s2);reA.value=a2;
+  $('arng').checked=S.rng;$('arb').hidden=!S.rng;
+}
+function paintRep(){document.querySelectorAll('#arep button').forEach(b=>b.classList.toggle('on',+b.dataset.r===S.rep))}
+function setRange(edit,g0){
+  if(edit==='s'){S.rs=g0;if(S.re<S.rs)S.re=S.rs}else{S.re=g0;if(S.rs>S.re)S.rs=S.re}
+  save();paintRange();
+}
+rsS.onchange=()=>setRange('s',gk(+rsS.value,1));
+rsA.onchange=()=>setRange('s',gk(+rsS.value,+rsA.value));
+reS.onchange=()=>setRange('e',gk(+reS.value,1));
+reA.onchange=()=>setRange('e',gk(+reS.value,+reA.value));
+$('arng').onchange=e=>{S.rng=e.target.checked;save();paintRange()};
+$('apg').onclick=()=>{
+  const nxt=(spread&&cur<T)?cur+1:cur;
+  S.rs=C.ps[cur-1]||1;S.re=Math.max(S.rs,(nxt<T?C.ps[nxt]:TA+1)-1);S.rng=true;save();paintRange();
+};
+document.querySelectorAll('#arep button').forEach(b=>b.onclick=()=>{
+  S.rep=+b.dataset.r;if(act){A.loop=S.rep===0;label()}save();paintRep();
+});
+$('aopt').onclick=()=>{const a=$('aset');a.hidden=!a.hidden;$('aopt').classList.toggle('on',!a.hidden)};
+
+// ---------- mode murattal (tombol speaker di bilah atas) ----------
+function applyMode(){
+  document.body.classList.toggle('aud',S.on);
+  $('abtn').classList.toggle('on',S.on);$('abtn').setAttribute('aria-pressed',S.on);
+  if(!S.on){$('aset').hidden=true;$('aopt').classList.remove('on')}
+}
+$('abtn').onclick=()=>{S.on=!S.on;if(!S.on)halt();save();applyMode();if(S.on)toast('Ketuk ayat di halaman untuk memutar')};
+// pemutar mengambang naik di atas bilah bawah saat bilah muncul
+if(window.ResizeObserver){new ResizeObserver(()=>document.documentElement.style.setProperty('--bh',$('bot').offsetHeight+'px')).observe($('bot'))}
+paintRange();paintRep();paintPlay();label();applyMode();
 })();
 </script></body></html>
