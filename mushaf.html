@@ -41,11 +41,35 @@ body.ui header,body.ui #ind{transform:none;opacity:1;pointer-events:auto}
 #dlbox[hidden],body:not(.ui) #dlbox{display:none}
 #dlbar{width:100%;accent-color:var(--primary)}
 #dlgo{background:var(--primary);color:var(--on);border-color:var(--primary)}
+
+/* Perekam bacaan */
+#rc{position:fixed;z-index:4;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:row-reverse;align-items:center;gap:8px;direction:ltr;transition:bottom .22s ease}
+body.ui #rc{bottom:calc(42px + env(safe-area-inset-bottom,0px))}
+.rb{width:42px;height:42px;padding:0;border-radius:50%;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.rb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+#rfab{width:54px;height:54px;background:var(--primary);color:var(--on);border-color:var(--primary);transition:box-shadow .08s linear}
+#rfab svg{width:24px;height:24px}
+#rfab.rec{background:#C0392B;border-color:#C0392B;box-shadow:0 0 0 calc(var(--lv,0)*14px) rgba(192,57,43,.35)}
+#rt{font:600 13px system-ui,sans-serif;font-variant-numeric:tabular-nums;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:6px 11px;max-width:60vw}
+#rtools{display:flex;gap:8px}
+#rt[hidden],#rtools[hidden]{display:none}
+@media(orientation:landscape){
+ #rc,body.ui #rc{top:50%;bottom:auto;transform:translateY(-50%);flex-direction:column-reverse}
+ #rtools{flex-direction:column}
+ #rfab{width:46px;height:46px}.rb{width:38px;height:38px}
+}
+/* Sembunyikan halaman (murojaah tanpa melihat) */
+body.hid .h{visibility:hidden}
+#hbtn{flex:none;padding:8px;display:grid;place-items:center}
+#hbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+#hbtn.on,#reye.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
+#hbtn,#reye{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 </style></head><body>
 <header>
   <a id="homebtn" href="index.html" aria-label="Kembali ke halaman awal"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg></a>
   <h1 id="ttl">Juz 1</h1><span class="pill" id="info" hidden></span>
   <button id="bmbtn" aria-label="Tandai halaman ini"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg></button>
+  <button id="hbtn"></button>
   <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></button>
   <select id="jsel" aria-label="Juz"></select>
   <select id="ssel" aria-label="Surat"></select>
@@ -54,6 +78,8 @@ body.ui header,body.ui #ind{transform:none;opacity:1;pointer-events:auto}
 <main id="track"></main>
 <div id="ind"></div>
 <div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
+<div id="rc"><button id="rfab" class="rb" aria-label="Rekam bacaan"></button><button id="reye" class="rb"></button><span id="rt" hidden></span>
+<div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div></div>
 <script src="config.js"></script>
 <script>
 const C=CFG,$=id=>document.getElementById(id),T=C.total,src=C.src;
@@ -110,6 +136,7 @@ function setCur(n){
   history.replaceState(null,'','?p='+n+(hasAyah?'&s='+s+'&a='+a:''));
   try{localStorage.setItem('quran.last',n)}catch(e){}
   syncBm(n);
+  window.recSync&&recSync(n);
   unloadFar();
 }
 function goto(n,smooth){
@@ -205,5 +232,114 @@ if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.servi
   }
   dlb.onclick=()=>{box.hidden=!box.hidden;if(!box.hidden)refresh()};
   gob.onclick=()=>run?(stop=true):start();
+})();
+
+// Perekam bacaan: rekaman per halaman, disimpan di IndexedDB (tetap ada setelah ditutup), bisa diunduh.
+(()=>{
+const fab=$('rfab'),tools=$('rtools'),rt=$('rt'),play=$('rplay'),mem={};
+const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
+const I={mic:'<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',pause:'<path d="M9 5v14M15 5v14"/>'};
+fab.innerHTML=svg(I.mic);play.innerHTML=svg(I.play);
+$('rredo').innerHTML=svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>');
+$('rdl').innerHTML=svg('<path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/>');
+$('rdel').innerHTML=svg('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>');
+const dbp=new Promise(r=>{try{const q=indexedDB.open('mushaf-rec',1);q.onupgradeneeded=()=>q.result.createObjectStore('r');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
+const tx=async(mode,fn)=>{const d=await dbp;if(!d)return null;return new Promise(r=>{try{const t=d.transaction('r',mode),q=fn(t.objectStore('r'));t.oncomplete=()=>r(q.result);t.onerror=t.onabort=()=>r(null)}catch(e){r(null)}})};
+const get=async k=>(await tx('readonly',s=>s.get(k)))||mem[k]||null;
+const put=async(k,v)=>{mem[k]=v;await tx('readwrite',s=>s.put(v,k))};
+const del=async k=>{delete mem[k];await tx('readwrite',s=>s.delete(k))};
+const mime=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'':'';
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+let rec=null,stream,ctx,raf,t0,recPage,data=null,audio=null,url=null,mt;
+function note(t){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},3500)}
+function stopAudio(){const a=audio;audio=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
+async function sync(n){
+  if(rec)return;
+  stopAudio();
+  const d=await get(n);
+  if(n!==cur||rec)return;
+  data=d;tools.hidden=!d;
+}
+window.recSync=n=>{sync(n)};
+function cleanup(){
+  cancelAnimationFrame(raf);
+  stream&&stream.getTracks().forEach(t=>t.stop());
+  ctx&&ctx.close().catch(()=>{});
+  fab.classList.remove('rec');fab.style.removeProperty('--lv');fab.innerHTML=svg(I.mic);
+  fab.setAttribute('aria-label','Rekam bacaan');rt.hidden=true;
+}
+async function start(){
+  if(rec)return;
+  if(!navigator.mediaDevices||!window.MediaRecorder){note('Browser ini belum mendukung perekaman');return}
+  stopAudio();
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:false}})}
+  catch(e){note('Izinkan akses mikrofon (perlu HTTPS)');return}
+  const chunks=[];
+  const mr=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:128000}:{audioBitsPerSecond:128000});
+  rec=mr;recPage=cur;t0=Date.now();
+  mr.ondataavailable=e=>{e.data&&e.data.size&&chunks.push(e.data)};
+  mr.onstop=async()=>{
+    const type=mr.mimeType||mime||'audio/webm',dur=(Date.now()-t0)/1000;
+    cleanup();
+    await put(recPage,{blob:new Blob(chunks,{type}),type,dur,ts:Date.now()});
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+    rec=null;sync(cur);
+  };
+  // meteran level suara
+  ctx=new(window.AudioContext||window.webkitAudioContext)();
+  const an=ctx.createAnalyser();an.fftSize=512;ctx.createMediaStreamSource(stream).connect(an);
+  const buf=new Uint8Array(an.fftSize);let peak=0;
+  const tick=()=>{
+    an.getByteTimeDomainData(buf);let m=0;for(const x of buf)m=Math.max(m,Math.abs(x-128));
+    peak=Math.max(peak,m);
+    fab.style.setProperty('--lv',Math.min(1,m/90).toFixed(2));
+    const el=(Date.now()-t0)/1000;
+    rt.textContent='● '+fmt(el)+(m>=120?' · terlalu keras':(el>3&&peak<8?' · suara terlalu pelan':''));
+    raf=requestAnimationFrame(tick);
+  };
+  fab.classList.add('rec');fab.innerHTML=svg(I.stop);fab.setAttribute('aria-label','Berhenti merekam');
+  tools.hidden=true;rt.hidden=false;
+  mr.start(1000);tick();
+}
+fab.onclick=()=>rec?rec.stop():start();
+$('rredo').onclick=start;
+play.onclick=()=>{
+  if(audio){audio.paused?audio.play():audio.pause();return}
+  if(!data)return;
+  url=URL.createObjectURL(data.blob);const a=audio=new Audio(url);
+  a.onplay=()=>{play.innerHTML=svg(I.pause)};
+  a.onpause=()=>{play.innerHTML=svg(I.play)};
+  a.onended=stopAudio;
+  a.play().catch(stopAudio);
+};
+$('rdl').onclick=()=>{
+  if(!data)return;
+  const ext=/mp4/.test(data.type)?'m4a':/ogg/.test(data.type)?'ogg':'webm';
+  const u=URL.createObjectURL(data.blob),a=document.createElement('a');
+  a.href=u;a.download='mushaf-hal-'+cur+'.'+ext;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),4000);
+};
+$('rdel').onclick=async()=>{
+  if(!confirm('Hapus rekaman halaman '+cur+'?'))return;
+  stopAudio();await del(cur);data=null;tools.hidden=true;
+};
+sync(cur);
+})();
+
+// Sembunyikan/tampilkan halaman. Tahan tombol saat tersembunyi untuk mengintip. Status diingat.
+(()=>{
+const bs=[$('hbtn'),$('reye')];let hid=false,peek=false,pt,skip=false;
+const eye='<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';
+const paint=()=>bs.forEach(b=>{b.innerHTML='<svg viewBox="0 0 24 24">'+eye+(hid?'<path d="M4 4l16 16"/>':'')+'</svg>';b.classList.toggle('on',hid);b.setAttribute('aria-pressed',hid);b.setAttribute('aria-label',hid?'Tampilkan halaman':'Sembunyikan halaman')});
+const apply=()=>{document.body.classList.toggle('hid',hid&&!peek);paint()};
+try{hid=localStorage.getItem('quran.hide')==='1'}catch(e){}
+bs.forEach(b=>{
+  b.onpointerdown=()=>{if(!hid)return;skip=false;pt=setTimeout(()=>{peek=true;skip=true;apply()},350)};
+  const end=()=>{clearTimeout(pt);if(peek){peek=false;apply()}};
+  b.onpointerup=b.onpointercancel=b.onpointerleave=end;
+  b.oncontextmenu=e=>e.preventDefault();
+  b.onclick=()=>{if(skip){skip=false;return}hid=!hid;try{localStorage.setItem('quran.hide',hid?'1':'0')}catch(e){}apply()};
+});
+apply();
 })();
 </script></body></html>
