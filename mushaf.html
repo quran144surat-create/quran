@@ -60,6 +60,8 @@ body.hid .h{visibility:hidden}
 #hbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 #hbtn.on,#reye.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #hbtn,#reye{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+/* tekan lama pada halaman: tanpa menu salin/unduh/bagikan gambar bawaan browser */
+#track,#track img,.ao i{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 #rg{display:flex;align-items:center;height:40px;padding:0 2px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:99px}
 #rg button{width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;box-shadow:none;font:700 18px/1 system-ui,sans-serif}
 #rg button:disabled{opacity:.3}
@@ -228,6 +230,9 @@ $('sel').onchange=e=>goto(+e.target.value,false);
 $('jsel').onchange=e=>goto(C.juzStart[+e.target.value-1],false);
 $('ssel').onchange=e=>goto(pageOfAyah(+e.target.value,1),false);
 
+// Tekan lama / seret gambar halaman tidak memunculkan menu bawaan browser
+track.addEventListener('contextmenu',e=>e.preventDefault());
+track.addEventListener('dragstart',e=>e.preventDefault());
 // Ketuk layar -> tampilkan/sembunyikan bilah. Geser halaman tidak memicu ketukan.
 let firstTap=true;
 track.addEventListener('click',e=>{
