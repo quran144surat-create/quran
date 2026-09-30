@@ -80,7 +80,7 @@ body.aud .ao i{cursor:pointer}
 #abtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 #abtn.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
 #ap{display:none;flex-direction:column;align-items:center;gap:8px;direction:ltr;padding:8px 10px 0}
-body.aud #ap{display:flex}
+body.pl #ap{display:flex}
 #apb{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%}
 #apb .rb{flex:none}
 #aplay{background:var(--primary);color:var(--on);border-color:var(--primary)}
@@ -143,6 +143,17 @@ header{gap:4px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transpa
 /* toast murattal */
 #at{position:fixed;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));pointer-events:none;width:max-content;direction:ltr}
 body.ui #at{bottom:calc(var(--bh,96px) + 12px)}
+#aq{font:600 12px system-ui,sans-serif;color:var(--muted)}
+#ash{background:transparent;align-items:stretch;justify-content:stretch}
+#apop{position:fixed;display:flex;background:var(--primary);color:var(--on);border-radius:12px;padding:4px;box-shadow:0 6px 20px rgba(0,0,0,.3);direction:ltr}
+#apop::after{content:"";position:absolute;left:var(--ax,50%);bottom:-4px;width:10px;height:10px;background:inherit;transform:translateX(-50%) rotate(45deg)}
+#apop.dn::after{bottom:auto;top:-4px}
+#apop button{display:grid;justify-items:center;gap:2px;width:60px;padding:8px 2px;border:0;border-radius:8px;background:transparent;color:inherit;box-shadow:none;font:600 11px system-ui,sans-serif}
+#apop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#apop button.on{color:var(--gold)}
+.ao i.sel{background:rgba(70,140,160,.3)}
+.row:disabled{opacity:.4}
+#qst{font:600 12.5px system-ui,sans-serif;color:var(--muted);min-height:1em}
 </style></head><body>
 <header>
   <a id="homebtn" href="index.html" aria-label="Kembali ke halaman awal"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg></a>
@@ -152,7 +163,7 @@ body.ui #at{bottom:calc(var(--bh,96px) + 12px)}
 </header>
 <div id="menu" role="menu" hidden>
   <button id="hbtn"></button>
-  <button id="abtn" aria-label="Murattal" aria-pressed="false"></button>
+  <button id="qbtn" aria-label="Pilih qori"></button>
   <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Unduh untuk offline</span></button>
   <button id="reye"></button>
 </div>
@@ -163,13 +174,14 @@ body.ui #at{bottom:calc(var(--bh,96px) + 12px)}
   <label class="fld">Surat<select id="ssel" aria-label="Surat"></select></label>
   <label class="fld">Halaman<select id="sel" aria-label="Halaman"></select></label>
 </div></div>
-<div id="ash" class="scrim" hidden><div class="sheet" role="dialog" aria-label="Aksi ayat">
-  <div class="grab"></div>
-  <div class="sh-t" id="asht"></div>
-  <button id="aph" class="row"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg><span>Putar dari ayat ini</span></button>
-  <button id="abm" class="row"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Tandai halaman</span></button>
-  <button id="ashare" class="row"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.9 7.6-4.4M8.2 13.1l7.6 4.4"/></svg><span>Bagikan</span></button>
+<div id="ash" class="scrim" hidden><div id="apop" role="menu">
+  <button id="aph"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg><span>Putar</span></button>
+  <button id="abm"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Tandai</span></button>
+  <button id="acopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Salin</span></button>
+  <button id="ashare"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.9 7.6-4.4M8.2 13.1l7.6 4.4"/></svg><span>Bagikan</span></button>
 </div></div>
+<div id="qs" class="scrim" hidden><div class="sheet" role="dialog" aria-label="Pilih qori"><div class="grab"></div><div class="sh-t"><span>Qori</span></div><div id="ql"></div>
+  <button id="qoff" class="row"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Simpan juz ini offline</span></button><div id="qst"></div></div></div>
 <div id="at" hidden role="status"></div>
 <main id="track"></main>
 
@@ -180,6 +192,7 @@ body.ui #at{bottom:calc(var(--bh,96px) + 12px)}
     <button id="rnr" class="rb" aria-label="Peredam bising"></button>
   </div>
   <div id="ap">
+    <div id="aq"></div>
     <div id="aset" hidden>
       <div class="al">Ulangi tiap ayat</div>
       <div class="seg" id="arep"><button data-r="1">1&times;</button><button data-r="2">2&times;</button><button data-r="3">3&times;</button><button data-r="0">Tanpa batas</button></div>
@@ -597,7 +610,8 @@ on();
 // Murattal Syeikh Muhammad Ayyub (everyayah.com): ketuk ayat -> putar dari ayat itu, ulangi tiap ayat, atur rentang.
 // Kotak ayat dibaca dari ayah-boxes-P.json / ayah-boxes-L.json (tidak diubah, harus satu folder dengan mushaf.html).
 (()=>{
-const BASE='https://everyayah.com/data/Muhammad_Ayyoub_128kbps/',KEY='quran.aud';
+const KEY='quran.aud';
+const RC=[{id:'ayyub',n:'Muhammad Ayyub',d:'Muhammad_Ayyoub_128kbps'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'nufais',n:'Ahmad Nufais',d:null}];
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={
   spk:'<path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
@@ -609,16 +623,16 @@ const I={
   set:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'
 };
 const cl=x=>Math.min(TA,Math.max(1,Math.round(+x)||1));
-let S={on:false,rep:1,rng:false,rs:1,re:TA};
+let S={on:true,q:'ayyub',rep:1,rng:false,rs:1,re:TA};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
-S.rs=cl(S.rs);S.re=Math.max(S.rs,cl(S.re));if(![0,1,2,3].includes(S.rep))S.rep=1;S.on=!!S.on;S.rng=!!S.rng;
+S.rs=cl(S.rs);S.re=Math.max(S.rs,cl(S.re));if(![0,1,2,3].includes(S.rep))S.rep=1;S.on=true;if(!RC.some(r=>r.id===S.q&&r.d))S.q='ayyub';S.rng=!!S.rng;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const pad=n=>String(n).padStart(3,'0');
 const sa=g=>{const s=surahOf(g);return[s,g-cum[s-1]]};
 const gk=(s,a)=>cum[s-1]+a;
-const url=g=>{const[s,a]=sa(g);return BASE+pad(s)+pad(a)+'.mp3'};
+const cq=()=>RC.find(r=>r.id===S.q)||RC[0];
+const url=g=>{const[s,a]=sa(g);return 'https://everyayah.com/data/'+cq().d+'/'+pad(s)+pad(a)+'.mp3'};
 
-$('abtn').innerHTML=svg(I.spk)+'<span>Mode murattal</span>';
 $('aprev').innerHTML=svg(I.prev);$('anext').innerHTML=svg(I.next);$('astop').innerHTML=svg(I.stop);$('aopt').innerHTML=svg(I.set);
 
 // ---------- pemutar ----------
@@ -629,7 +643,7 @@ const recording=()=>$('rfab').classList.contains('rec');
 function toast(m){const e=$('at');e.textContent=m;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{e.hidden=true},3000)}
 function paintPlay(){const pl=act&&!A.paused;$('aplay').innerHTML=svg(pl?I.pause:I.play);$('aplay').setAttribute('aria-label',pl?'Jeda':'Putar murattal')}
 function label(){
-  const l=$('alb');if(!act){l.textContent='Murattal';return}
+  const l=$('alb');document.body.classList.toggle('pl',act);$('aq').textContent=cq().n;if(!act){l.textContent='Murattal';return}
   const[s,a]=sa(g);
   l.textContent=SN[s-1]+' '+a+(S.rep===0?' \u221e':S.rep>1?' ('+Math.min(rep+1,S.rep)+'/'+S.rep+')':'');
 }
@@ -641,12 +655,21 @@ function follow(){const[s,a]=sa(g),p=pageOfAyah(s,a);if(start(p)!==cur)goto(p,tr
 function meta(){
   if(!('mediaSession' in navigator))return;
   const[s,a]=sa(g);
-  try{navigator.mediaSession.metadata=new MediaMetadata({title:SN[s-1]+' : '+a,artist:'Syeikh Muhammad Ayyub',album:'Murattal'})}catch(e){}
+  try{navigator.mediaSession.metadata=new MediaMetadata({title:SN[s-1]+' : '+a,artist:cq().n,album:'Murattal'})}catch(e){}
 }
-function warmNext(){if(g<endG())warm.src=url(g+1)}
+const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('http'),have=new Set();let tok=0,ou=null;
+if(ok)caches.open(AC).then(c=>c.keys()).then(ks=>ks.forEach(r=>have.add(r.url))).catch(()=>{});
+const keep=u=>{if(!ok||have.has(u))return;fetch(u,{mode:'cors'}).then(r=>{if(!r.ok)throw 0;return caches.open(AC).then(c=>c.put(u,r))}).then(()=>have.add(u)).catch(()=>{})};
+const pl=()=>A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar');paintPlay()}});
+// ayat yang sudah pernah diputar diambil dari cache (bisa offline); yang belum, diputar dari internet lalu disimpan
+function setSrc(u){
+  const my=++tok;if(ou){URL.revokeObjectURL(ou);ou=null}
+  if(have.has(u)){caches.open(AC).then(c=>c.match(u)).then(r=>r?r.blob():null).catch(()=>null).then(b=>{if(my!==tok)return;if(b){ou=URL.createObjectURL(b);A.src=ou}else A.src=u;pl()});return}
+  A.src=u;pl();keep(u);
+}
+function warmNext(){if(g<endG()){const u=url(g+1);warm.src=u;keep(u)}}
 function load(n){
-  g=n;rep=0;act=true;A.loop=S.rep===0;A.src=url(g);
-  A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar');paintPlay()}});
+  g=n;rep=0;act=true;A.loop=S.rep===0;setSrc(url(g));
   mark();follow();label();meta();paintPlay();warmNext();
 }
 function halt(){
@@ -713,11 +736,16 @@ window.audOv=async(h,im)=>{
 const trk=$('track'),ash=$('ash');
 let lpT=0,lpX=0,lpY=0,lpFired=false,lk=null;
 const clearLp=()=>{clearTimeout(lpT);lpT=0};
-function paintAct(){const on=bm().includes(cur);$('abm').querySelector('span').textContent=on?'Hapus penanda halaman':'Tandai halaman';$('abm').classList.toggle('on',on)}
+function paintAct(){const on=bm().includes(cur);$('abm').querySelector('span').textContent=on?'Hapus':'Tandai';$('abm').classList.toggle('on',on)}
 function openAct(k){
-  lk=k;const[s1,a1]=k.split(':').map(Number);
-  $('asht').textContent='QS '+SN[s1-1]+' : '+a1;paintAct();ash.hidden=false;
+  lk=k;paintAct();ash.hidden=false;
+  let r=null;document.querySelectorAll('.ao i[data-k="'+k+'"]').forEach(n=>{n.classList.add('sel');const b=n.getBoundingClientRect();if(!r||b.top<r.top)r=b});
+  const p=$('apop');if(!r)return;
+  const pw=p.offsetWidth,ph=p.offsetHeight,cx=r.left+r.width/2,x=Math.max(8,Math.min(innerWidth-pw-8,cx-pw/2));
+  let y=r.top-ph-12,dn=false;if(y<8){y=r.bottom+12;dn=true}
+  p.style.left=x+'px';p.style.top=y+'px';p.classList.toggle('dn',dn);p.style.setProperty('--ax',Math.max(16,Math.min(pw-16,cx-x))+'px');
 }
+new MutationObserver(()=>{if(ash.hidden)document.querySelectorAll('.ao i.sel').forEach(n=>n.classList.remove('sel'))}).observe(ash,{attributes:true,attributeFilter:['hidden']});
 trk.addEventListener('pointerdown',e=>{
   lpFired=false;clearLp();
   const i=e.target.closest&&e.target.closest('.ao i');if(!i||e.button>0)return;
@@ -730,13 +758,14 @@ trk.addEventListener('scroll',clearLp,{passive:true});
 // fase capture: tekan lama tidak memicu ketukan; ketukan pada ayat (mode murattal) memutar audio dan tidak memunculkan/menyembunyikan bilah
 trk.addEventListener('click',e=>{
   if(lpFired){lpFired=false;e.stopPropagation();e.preventDefault();return}
-  if(!document.body.classList.contains('aud'))return;
-  const i=e.target.closest&&e.target.closest('.ao i');if(!i)return;
-  e.stopPropagation();tap(i.dataset.k);
 },true);
 ash.addEventListener('click',e=>{if(e.target===ash)ash.hidden=true});
-$('aph').onclick=()=>{ash.hidden=true;if(!S.on){S.on=true;save();applyMode()}tap(lk)};
+$('aph').onclick=()=>{ash.hidden=true;tap(lk)};
 $('abm').onclick=()=>{$('bmbtn').click();ash.hidden=true};
+$('acopy').onclick=async()=>{
+  ash.hidden=true;const[s1,a1]=lk.split(':').map(Number);
+  try{await navigator.clipboard.writeText('QS '+SN[s1-1]+' : '+a1+'\n'+location.origin+location.pathname+'?s='+s1+'&a='+a1);toast('Disalin')}catch(x){toast('Tidak bisa menyalin')}
+};
 $('ashare').onclick=async()=>{
   ash.hidden=true;const[s1,a1]=lk.split(':').map(Number);
   const u=location.origin+location.pathname+'?s='+s1+'&a='+a1,tx='QS '+SN[s1-1]+' : '+a1;
@@ -772,15 +801,28 @@ document.querySelectorAll('#arep button').forEach(b=>b.onclick=()=>{
 });
 $('aopt').onclick=()=>{const a=$('aset');a.hidden=!a.hidden;$('aopt').classList.toggle('on',!a.hidden)};
 
-// ---------- mode murattal (tombol speaker di bilah atas) ----------
-function applyMode(){
-  document.body.classList.toggle('aud',S.on);
-  $('abtn').classList.toggle('on',S.on);$('abtn').setAttribute('aria-pressed',S.on);
-  if(!S.on){$('aset').hidden=true;$('aopt').classList.remove('on')}
+// ---------- qori: daftar pilihan + simpan offline per juz ----------
+const qb=$('qbtn'),qs=$('qs'),ql=$('ql');let off=false;
+qb.innerHTML=svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')+'<span></span>';
+function paintQ(){
+  qb.querySelector('span').textContent='Qori: '+cq().n;
+  ql.replaceChildren(...RC.map(r=>{const b=document.createElement('button');b.className='row'+(r.id===S.q?' on':'');b.disabled=!r.d;
+    b.textContent=r.n+(r.d?(r.id===S.q?'  \u2713':''):' (belum tersedia)');
+    b.onclick=()=>{S.q=r.id;save();paintQ();label();$('qst').textContent='';if(act)load(g)};return b}));
 }
-$('abtn').onclick=()=>{S.on=!S.on;if(!S.on)halt();save();applyMode();if(S.on)toast('Ketuk ayat di halaman untuk memutar')};
+qb.onclick=()=>{paintQ();qs.hidden=false};
+qs.addEventListener('click',e=>{if(e.target===qs)qs.hidden=true});
+$('qoff').onclick=async()=>{
+  const st=$('qst');if(off)return;
+  if(!ok){st.textContent='Perlu dibuka lewat alamat web (https)';return}
+  const j=juzOf(cur),g0=C.ps[C.juzStart[j-1]-1]||1,g1=j<30?C.ps[C.juzStart[j]-1]-1:TA,tot=g1-g0+1,list=[];
+  for(let x=g0;x<=g1;x++){const u=url(x);if(!have.has(u))list.push(u)}
+  off=true;let i=0,n=0,f=0;const up=()=>{st.textContent='Juz '+j+': '+(tot-list.length+n)+' / '+tot+' ayat tersimpan'+(f?' \u00b7 '+f+' gagal':'')};up();
+  const w=async()=>{while(i<list.length){const u=list[i++];try{const r=await fetch(u,{mode:'cors'});if(!r.ok)throw 0;await(await caches.open(AC)).put(u,r);have.add(u);n++}catch(e){f++}up()}};
+  await Promise.all([w(),w(),w()]);off=false;
+};
 // pemutar mengambang naik di atas bilah bawah saat bilah muncul
 if(window.ResizeObserver){new ResizeObserver(()=>document.documentElement.style.setProperty('--bh',$('bot').offsetHeight+'px')).observe($('bot'))}
-paintRange();paintRep();paintPlay();label();applyMode();
+paintQ();paintRange();paintRep();paintPlay();label();
 })();
 </script></body></html>
