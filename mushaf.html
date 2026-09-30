@@ -250,15 +250,25 @@ const put=async(k,v)=>{mem[k]=v;await tx('readwrite',s=>s.put(v,k))};
 const del=async k=>{delete mem[k];await tx('readwrite',s=>s.delete(k))};
 const mime=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'':'';
 const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
-let rec=null,stream,ctx,raf,t0,recPage,data=null,audio=null,url=null,mt;
+let rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,audio=null,url=null,mt;
 function note(t){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},3500)}
-function stopAudio(){const a=audio;audio=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
+function stopAudio(){const a=audio;audio=null;playKey=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
+// Cari rekaman untuk halaman n: potret (halaman n) dan landscape (pasangan n,n+1) saling dikenali.
+async function find(n){
+  for(const k of spread?[n,n+1]:[n,n-1]){
+    if(k<1)continue;
+    const v=await get(k);
+    if(v&&(k===n||(spread?v.span!==2:v.span===2)))return{k,v};
+  }
+  return null;
+}
 async function sync(n){
   if(rec)return;
-  stopAudio();
-  const d=await get(n);
+  const r=await find(n);
   if(n!==cur||rec)return;
-  data=d;tools.hidden=!d;
+  if(audio&&r&&playKey===r.k){data=r.v;dataKey=r.k;tools.hidden=false;return} // putaran tetap jalan saat layar diputar
+  stopAudio();
+  data=r?r.v:null;dataKey=r?r.k:null;tools.hidden=!r;
 }
 window.recSync=n=>{sync(n)};
 function cleanup(){
@@ -276,12 +286,13 @@ async function start(){
   catch(e){note('Izinkan akses mikrofon (perlu HTTPS)');return}
   const chunks=[];
   const mr=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:128000}:{audioBitsPerSecond:128000});
-  rec=mr;recPage=cur;t0=Date.now();
+  rec=mr;recPage=cur;recSpan=spread?2:1;replaceKey=dataKey;t0=Date.now();
   mr.ondataavailable=e=>{e.data&&e.data.size&&chunks.push(e.data)};
   mr.onstop=async()=>{
     const type=mr.mimeType||mime||'audio/webm',dur=(Date.now()-t0)/1000;
     cleanup();
-    await put(recPage,{blob:new Blob(chunks,{type}),type,dur,ts:Date.now()});
+    await put(recPage,{blob:new Blob(chunks,{type}),type,dur,span:recSpan,ts:Date.now()});
+    if(replaceKey!=null&&replaceKey!==recPage)await del(replaceKey);
     try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
     rec=null;sync(cur);
   };
@@ -306,7 +317,7 @@ $('rredo').onclick=start;
 play.onclick=()=>{
   if(audio){audio.paused?audio.play():audio.pause();return}
   if(!data)return;
-  url=URL.createObjectURL(data.blob);const a=audio=new Audio(url);
+  url=URL.createObjectURL(data.blob);playKey=dataKey;const a=audio=new Audio(url);
   a.onplay=()=>{play.innerHTML=svg(I.pause)};
   a.onpause=()=>{play.innerHTML=svg(I.play)};
   a.onended=stopAudio;
@@ -316,12 +327,12 @@ $('rdl').onclick=()=>{
   if(!data)return;
   const ext=/mp4/.test(data.type)?'m4a':/ogg/.test(data.type)?'ogg':'webm';
   const u=URL.createObjectURL(data.blob),a=document.createElement('a');
-  a.href=u;a.download='mushaf-hal-'+cur+'.'+ext;document.body.appendChild(a);a.click();a.remove();
+  a.href=u;a.download='mushaf-hal-'+dataKey+'.'+ext;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 };
 $('rdel').onclick=async()=>{
-  if(!confirm('Hapus rekaman halaman '+cur+'?'))return;
-  stopAudio();await del(cur);data=null;tools.hidden=true;
+  if(dataKey==null||!confirm('Hapus rekaman halaman '+dataKey+'?'))return;
+  stopAudio();await del(dataKey);data=null;dataKey=null;tools.hidden=true;
 };
 sync(cur);
 })();
@@ -341,5 +352,19 @@ bs.forEach(b=>{
   b.onclick=()=>{if(skip){skip=false;return}hid=!hid;try{localStorage.setItem('quran.hide',hid?'1':'0')}catch(e){}apply()};
 });
 apply();
+})();
+
+// Tahan layar agar tidak mati selama mushaf tampil (Screen Wake Lock); dilepas otomatis saat ditutup.
+(()=>{
+if(!navigator.wakeLock)return;
+let lock=null,busy=false;
+const on=async()=>{
+  if(lock||busy||document.hidden)return;busy=true;
+  try{lock=await navigator.wakeLock.request('screen');lock.addEventListener('release',()=>{lock=null})}catch(e){lock=null}
+  busy=false;
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)on()});
+['pointerdown','keydown','touchend'].forEach(t=>addEventListener(t,on,{passive:true}));
+on();
 })();
 </script></body></html>
