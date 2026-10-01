@@ -37,10 +37,24 @@ body.ui header,body.ui #bot{transform:none;opacity:1;pointer-events:auto}
 #dlbtn{flex:none;padding:8px;display:grid;place-items:center}
 #dlbtn[hidden]{display:none}
 #dlbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
-#dlbox{position:fixed;z-index:6;left:12px;right:12px;top:calc(62px + env(safe-area-inset-top,0px));max-width:360px;margin-inline:auto;direction:ltr;text-align:left;display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-#dlbox[hidden],body:not(.ui) #dlbox{display:none}
-#dlbar{width:100%;accent-color:var(--primary)}
-#dlgo{background:var(--primary);color:var(--on);border-color:var(--primary)}
+/* Simpan offline: sheet bawah (muncul hanya saat dibuka, seperti pilihan qori), kisi 30 juz */
+.dl{max-height:calc(100dvh - 24px);overflow:auto}
+.dl-bar{display:flex;justify-content:flex-end;gap:16px;margin:-4px 0 -2px}
+.lnk{border:0;background:none;padding:4px 2px;font:600 12.5px system-ui,sans-serif;color:var(--accent)}
+.lnk:disabled{opacity:.4}
+#jg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.jt{position:relative;height:46px;padding:0;overflow:hidden;border-radius:12px;font:700 16px system-ui,sans-serif;font-variant-numeric:tabular-nums;background-color:var(--surface);background-image:linear-gradient(to top,color-mix(in srgb,var(--primary) 26%,transparent) calc(var(--p,0)*100%),transparent 0)}
+.jt.done{background:var(--primary);color:var(--on);border-color:var(--primary)}
+.jt.done::after{content:"\2713";position:absolute;top:2px;right:6px;font-size:10px;opacity:.85}
+.jt.sel{background-color:var(--gold);color:var(--goldink);border-color:var(--goldink);box-shadow:inset 0 0 0 1px var(--goldink)}
+#dlleg{font:500 11.5px system-ui,sans-serif;color:var(--muted);text-align:center}
+#dlprog{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+#dlprog[hidden]{display:none}
+#dlprog i{display:block;height:100%;background:var(--primary);transform-origin:left;transform:scaleX(var(--v,0));transition:transform .2s}
+#dltxt{font:600 12.5px system-ui,sans-serif;color:var(--muted);text-align:center;min-height:1.4em}
+#dlgo{width:100%;padding:13px;font-size:15px;background:var(--primary);color:var(--on);border-color:var(--primary)}
+#dlgo:disabled{opacity:.45}
+@media(orientation:landscape) and (max-height:500px){#jg{grid-template-columns:repeat(10,1fr)}}
 
 /* Perekam bacaan: ada di bilah bawah (muncul saat layar diketuk), jadi tidak pernah menimpa gambar halaman */
 #rc{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 8px;padding:8px 10px 2px;direction:ltr}
@@ -194,7 +208,16 @@ body.ui #bk{display:none}
 <main id="track"></main>
 <button id="bk" aria-label="Kembali"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
 
-<div id="dlbox" hidden><div id="dltxt">Memeriksa…</div><progress id="dlbar" value="0"></progress><button id="dlgo">Unduh semua halaman</button></div>
+<div id="dlbox" class="scrim" hidden><div class="sheet dl" role="dialog" aria-label="Simpan offline">
+  <div class="grab"></div>
+  <div class="sh-t"><span>Simpan offline</span><span class="pill" id="dlsum">0/30 juz</span></div>
+  <div class="dl-bar"><button id="dlall" class="lnk">Pilih semua</button><button id="dlnone" class="lnk">Bersihkan</button></div>
+  <div id="jg" role="group" aria-label="Pilih juz yang mau disimpan"></div>
+  <div id="dlleg">✓ lengkap · terisi sebagian · kosong belum tersimpan</div>
+  <div id="dlprog" hidden><i></i></div>
+  <div id="dltxt" aria-live="polite"></div>
+  <button id="dlgo" disabled>Pilih juz dulu</button>
+</div></div>
 <div id="bot">
   <div id="rset" hidden>
     <div id="rg" role="group" aria-label="Penguatan suara"><button id="rgm" aria-label="Kurangi penguatan">−</button><span id="rgain" aria-live="polite"></span><button id="rgp" aria-label="Tambah penguatan">+</button></div>
@@ -390,49 +413,101 @@ addEventListener('keydown',e=>{if(e.key==='Escape'){navSheet.hidden=true;$('ash'
 })();
 if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.serviceWorker.register('sw.js');
 
-// Simpan semua gambar untuk offline (Cache API, bukan localStorage).
-// Cache 'mushaf-v1' dan alamat gambar sama dengan Kuis Murojaah v3, jadi unduhan di salah satu app terlihat di app satunya.
+// Simpan gambar untuk offline per juz (Cache API, bukan localStorage).
+// Cache 'mushaf-v1' dan alamat gambar sama persis dengan Kuis Murojaah v3. Status tiap juz dibaca langsung dari cache bersama itu
+// (tidak ada catatan terpisah), jadi unduhan di salah satu app langsung terlihat di app satunya.
 (()=>{
-  const dlb=$('dlbtn'),box=$('dlbox'),bar=$('dlbar'),txt=$('dltxt'),gob=$('dlgo');
+  const dlb=$('dlbtn'),box=$('dlbox'),grid=$('jg'),txt=$('dltxt'),gob=$('dlgo'),prog=$('dlprog'),sum=$('dlsum'),lab=dlb.querySelector('span');
   if(!window.caches||!location.protocol.startsWith('http')){dlb.hidden=true;return}
-  const CN='mushaf-v1';
-  // potret (1 gambar per halaman) + landscape (1 gambar per pasangan halaman)
-  const ALL=(()=>{const st=new Set();for(let i=1;i<=T;i++){st.add(new URL(src(i,'P'),location.href).href);st.add(new URL(src(i,'L'),location.href).href)}return[...st]})();
-  const N=ALL.length;
-  bar.max=N;let run=false,stop=false;
-  async function missing(c){
-    const set=new Set((await c.keys()).map(r=>r.url));
-    return ALL.filter(u=>!set.has(u));
+  const CN='mushaf-v1',abs=u=>new URL(u,location.href).href,LAB0=lab.textContent;
+  // alamat gambar per juz: potret (1 gambar per halaman) + landscape (1 gambar per pasangan halaman); gambar landscape di batas juz dipakai dua juz
+  const JU=[];
+  for(let j=1;j<=30;j++){
+    const a=C.juzStart[j-1]||1,b=j<30?C.juzStart[j]-1:T,st=new Set();
+    for(let p=a;p<=b;p++){st.add(abs(src(p,'P')));st.add(abs(src(p,'L')))}
+    JU[j]=[...st];
+  }
+  let have=new Set(),sel=new Set(),run=false,stop=false,raf=0;
+  const cnt=j=>{let n=0;for(const u of JU[j])if(have.has(u))n++;return n};
+  const done=j=>cnt(j)>=JU[j].length;
+  const tiles=[];
+  for(let j=1;j<=30;j++){const t=document.createElement('button');t.className='jt';t.textContent=j;t.dataset.j=j;grid.appendChild(t);tiles[j]=t}
+  function paint(){
+    raf=0;let nd=0,k=0;const miss=new Set();
+    for(let j=1;j<=30;j++){
+      const n=cnt(j),N=JU[j].length,d=n>=N,on=sel.has(j)&&!d,t=tiles[j];
+      if(d)nd++;
+      if(on){k++;for(const u of JU[j])if(!have.has(u))miss.add(u)}
+      t.classList.toggle('done',d);t.classList.toggle('sel',on);
+      t.style.setProperty('--p',(n/N).toFixed(3));
+      t.setAttribute('aria-pressed',on);t.setAttribute('aria-disabled',d||run);
+      t.setAttribute('aria-label','Juz '+j+', '+(d?'sudah tersimpan':n?n+' dari '+N+' gambar tersimpan':'belum tersimpan'));
+    }
+    sum.textContent=nd+'/30 juz';
+    if(!run){
+      gob.disabled=!k;
+      gob.textContent=k?'Unduh '+k+' juz · '+miss.size+' gambar':nd===30?'Semua juz sudah tersimpan':'Pilih juz dulu';
+    }
+  }
+  const paintSoon=()=>{if(!raf)raf=requestAnimationFrame(paint)};
+  async function idle(){
+    if(run)return;
+    let mb='';
+    try{const e=await navigator.storage.estimate();if(e&&e.usage>1048576)mb=' · terpakai ±'+Math.round(e.usage/1048576)+' MB'}catch(x){}
+    if(!run)txt.textContent='Dipakai juga oleh app Kuis Murojaah'+mb;
   }
   async function refresh(){
     if(run)return;
-    const n=N-(await missing(await caches.open(CN))).length;
-    bar.value=n;
-    txt.textContent=n>=N?'Semua halaman (potret & landscape) sudah tersimpan. Bisa dibaca tanpa internet.':n+' / '+N+' gambar tersimpan di perangkat.';
-    gob.textContent=n>=N?'Periksa lagi':(n?'Lanjutkan unduh':'Unduh semua halaman');
+    try{have=new Set((await(await caches.open(CN)).keys()).map(r=>r.url))}catch(e){}
+    paint();idle();
   }
   async function start(){
-    run=true;stop=false;gob.textContent='Berhenti';
+    const order=[...sel].filter(j=>!done(j)).sort((a,b)=>a-b);
+    if(!order.length)return;
+    let c;try{c=await caches.open(CN)}catch(e){txt.textContent='Penyimpanan tidak bisa dibuka';return}
+    const todo=[],seen=new Set();
+    for(const j of order)for(const u of JU[j])if(!have.has(u)&&!seen.has(u)){seen.add(u);todo.push(u)}
+    const N=todo.length;if(!N){paint();return}
+    run=true;stop=false;gob.disabled=false;gob.textContent='Berhenti';prog.hidden=false;paint();
     try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-    const c=await caches.open(CN),todo=await missing(c);
-    let done=N-todo.length,fail=0,streak=0,i=0;
-    const upd=()=>{bar.value=done;txt.textContent=done+' / '+N+' gambar tersimpan'+(fail?' · '+fail+' gagal':'')};
+    let ok=0,fail=0,streak=0,i=0;
+    const upd=()=>{
+      prog.style.setProperty('--v',(ok/N).toFixed(3));
+      txt.textContent='Mengunduh '+ok+' / '+N+' gambar'+(fail?' · '+fail+' gagal':'');
+      lab.textContent='Mengunduh '+Math.round(ok/N*100)+'%';
+      paintSoon();
+    };
     upd();
     const w=async()=>{
       while(!stop&&streak<8&&i<todo.length){
         const u=todo[i++];
-        try{const r=await fetch(u,{mode:'cors'});if(!r.ok)throw 0;await c.put(u,r);done++;streak=0}
+        try{const r=await fetch(u,{mode:'cors'});if(!r.ok)throw 0;await c.put(u,r);have.add(u);ok++;streak=0}
         catch(e){fail++;streak++}
         upd();
       }
     };
     await Promise.all([w(),w(),w(),w()]);
-    run=false;const left=N-done;
-    txt.textContent=left?done+' / '+N+' tersimpan. '+(streak>=8?'Ada yang gagal (koneksi, penyimpanan penuh, atau gambar belum ada di repo).':'Dihentikan.')+' Tekan lanjutkan.':'Selesai! Semua gambar tersimpan.';
-    gob.textContent=left?'Lanjutkan unduh':'Periksa lagi';
+    run=false;prog.hidden=true;lab.textContent=LAB0;paint();
+    txt.textContent=ok>=N?'Selesai, '+order.length+' juz tersimpan':streak>=8?'Gagal berulang (koneksi, penyimpanan penuh, atau gambar juz ini belum ada di repo). Juz yang belum lengkap tetap terpilih.':stop?'Dihentikan. Yang sudah tersimpan tetap ada.':ok+' tersimpan, '+fail+' gagal. Juz yang belum lengkap tetap terpilih.';
   }
-  dlb.onclick=()=>{box.hidden=!box.hidden;if(!box.hidden)refresh()};
+  grid.onclick=e=>{
+    const t=e.target.closest('.jt');if(!t||run)return;
+    const j=+t.dataset.j;if(done(j))return;
+    sel.has(j)?sel.delete(j):sel.add(j);paint();
+  };
+  $('dlall').onclick=()=>{if(run)return;for(let j=1;j<=30;j++)if(!done(j))sel.add(j);paint()};
+  $('dlnone').onclick=()=>{if(run)return;sel.clear();paint()};
   gob.onclick=()=>run?(stop=true):start();
+  // dibuka dari menu: status dibaca ulang dari cache bersama; bila belum ada pilihan, juz yang sedang dibaca dipilih lebih dulu
+  dlb.onclick=async()=>{
+    await refresh();
+    if(!run&&!sel.size){const j=juzOf(cur);if(!done(j)){sel.add(j);paint()}}
+    box.hidden=false;
+  };
+  box.addEventListener('click',e=>{if(e.target===box)box.hidden=true});
+  // kembali dari app lain (mis. selesai mengunduh di Kuis Murojaah) saat sheet masih terbuka: segarkan status
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!box.hidden)refresh()});
+  paint();
 })();
 
 // Perekam bacaan: rekaman per halaman, disimpan di IndexedDB (tetap ada setelah ditutup), bisa diunduh.
