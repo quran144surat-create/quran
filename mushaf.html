@@ -252,7 +252,7 @@ SN.forEach((n,i)=>$('ssel').add(new Option((i+1)+'. '+n,i+1)));
 for(let i=1;i<=T;i++)$('sel').add(new Option('Hal. '+i,i));
 
 const track=$('track'),mq=matchMedia('(orientation:landscape)');
-let spread=mq.matches,cells={},loaded=new Set(),loadObs,curObs,rz=false,curUrl=null;
+let spread=mq.matches,cells={},loaded=new Set(),loadObs,curObs,rz=false,curUrl=null,ftgt=0;
 const start=n=>spread?(n%2?n:n-1):n;
 
 function loadImg(h){
@@ -321,7 +321,9 @@ function build(){
 build();
 mq.addEventListener('change',()=>{spread=mq.matches;build()});
 // Ukuran layar berubah (fullscreen masuk/keluar, bilah sistem, rotasi): tahan pergantian halaman aktif sampai ukuran stabil, lalu ratakan ulang sekali
-let rt;const hold=()=>{rz=true;clearTimeout(rt);rt=setTimeout(()=>{goto(cur,false);requestAnimationFrame(()=>{rz=false})},200)};
+let rt;const hold=()=>{rz=true;clearTimeout(rt);rt=setTimeout(()=>{goto(ftgt||cur,false);requestAnimationFrame(()=>{rz=false;
+  // pergantian halaman yang tertahan selama rz tidak pernah dilaporkan observer: sinkronkan 'cur' dengan halaman di tengah layar
+  const el=document.elementFromPoint(innerWidth/2,innerHeight/2),pg=el&&el.closest&&el.closest('.pg');if(pg&&+pg.dataset.p!==cur)setCur(+pg.dataset.p)})},200)};
 addEventListener('resize',hold);
 document.addEventListener('fullscreenchange',hold);
 
@@ -703,7 +705,27 @@ function mark(){
   document.querySelectorAll('.ao i.on').forEach(n=>n.classList.remove('on'));
   if(act&&g){const[s,a]=sa(g);document.querySelectorAll('.ao i[data-k="'+s+':'+a+'"]').forEach(n=>n.classList.add('on'))}
 }
-function follow(){const[s,a]=sa(g),p=pageOfAyah(s,a);if(start(p)!==cur)goto(p,true)}
+let ftt=0,fck=0,retry=0,skips=0,wd=0,unl=false;
+const SIL='data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+const silent=()=>A.src.indexOf('data:audio/wav')===0;
+// ayat ini sedang terlihat di layar? (kotaknya, atau halaman awal ayatnya, ada di tengah layar)
+function shown(s,a){
+  for(const n of document.querySelectorAll('.ao i[data-k="'+s+':'+a+'"]')){const b=n.getBoundingClientRect(),x=(b.left+b.right)/2;if(x>0&&x<innerWidth)return true}
+  const c=cells[start(pageOfAyah(s,a))];if(!c)return false;
+  const r=c.getBoundingClientRect(),x=(r.left+r.right)/2;return x>0&&x<innerWidth;
+}
+function follow(){
+  if(!act||!g)return;
+  const[s,a]=sa(g);if(shown(s,a))return;
+  const p=pageOfAyah(s,a),c=cells[start(p)];if(!c)return;
+  const r=c.getBoundingClientRect(),near=Math.abs((r.left+r.right)/2-innerWidth/2)<innerWidth*2.5;
+  ftgt=p;clearTimeout(ftt);ftt=setTimeout(()=>{ftgt=0},2500);
+  goto(p,near&&!document.hidden); // jauh atau layar mati: lompat langsung (gulir mulus jauh sering terputus)
+  clearTimeout(fck);const my=g;
+  fck=setTimeout(()=>{if(act&&g===my&&!shown(s,a))goto(p,false)},near?900:300); // gagal sampai? lompat langsung
+}
+// kembali ke aplikasi saat murattal masih jalan: pindah ke halaman ayat yang sedang diputar
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&act&&g)follow()});
 function meta(){
   if(!('mediaSession' in navigator))return;
   const[s,a]=sa(g);
@@ -712,16 +734,35 @@ function meta(){
 const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('http'),have=new Set();let tok=0,ou=null,cu=null;
 if(ok)caches.open(AC).then(c=>c.keys()).then(ks=>ks.forEach(r=>have.add(r.url))).catch(()=>{});
 const keep=u=>{if(!ok||have.has(u))return;fetch(u,{mode:'cors'}).then(r=>{if(!r.ok)throw 0;return caches.open(AC).then(c=>c.put(u,r))}).then(()=>have.add(u)).catch(()=>{})};
-const pl=()=>A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar ('+(e.name||'?')+')');paintPlay()}});
+const pl=()=>{const p=A.play();p&&p.catch&&p.catch(e=>{
+  if(!e||e.name==='AbortError'||e.name==='NotSupportedError')return; // Abort: sumber diganti; NotSupported: ditangani onerror/penjaga waktu
+  toast(e.name==='NotAllowedError'?'Ketuk tombol putar untuk memulai audio':'Audio tidak bisa diputar ('+(e.name||'?')+')');paintPlay();
+})};
+// iOS/Safari hanya mengizinkan play() di dalam sentuhan pengguna. Ayat dari cache baru diputar setelah cache terbaca (di luar sentuhan),
+// jadi elemen audio dibuka kuncinya sekali dengan klip hening saat sentuhan pertama.
+function unlock(){if(unl)return;unl=true;try{A.loop=false;A.src=SIL;const p=A.play();p&&p.catch&&p.catch(()=>{})}catch(e){}}
+// penjaga waktu: audio tidak mulai dalam 12 dtk (macet tanpa error) dianggap gagal
+function arm(my){clearTimeout(wd);wd=setTimeout(()=>{if(my!==tok||!act||A.paused||silent())return;if(A.readyState<3&&A.currentTime===0)bad('T')},12000)}
+// ayat gagal dimuat: cache rusak -> internet; coba ulang sekali; basmalah gagal -> langsung ayat; ayat tidak ada -> dilewati
+function bad(code){
+  if(!act||silent())return;
+  const u=cu;
+  if(ou&&u&&A.src===ou){URL.revokeObjectURL(ou);ou=null;have.delete(u);caches.open(AC).then(c=>c.delete(u)).catch(()=>{});A.src=u;pl();arm(tok);return}
+  if(retry<1&&u&&navigator.onLine!==false){retry++;const my=tok;setTimeout(()=>{if(my!==tok||!act)return;A.src=u;pl();arm(my)},700);return}
+  const[s,a]=sa(g),nm=pre?'basmalah':SN[s-1]+' '+a;
+  if(pre){pre=false;A.loop=S.rep===0;toast('Audio basmalah tidak tersedia, langsung ke ayat');setSrc(url(g));label();return}
+  if(skips<3&&navigator.onLine!==false&&g<endG()){skips++;toast('Audio '+nm+' tidak tersedia (kode '+code+'), dilewati');load(g+1);return}
+  toast('Audio '+nm+' tidak dapat dimuat (kode '+code+'). Periksa koneksi internet, lalu ketuk putar untuk mencoba lagi.');paintPlay();
+}
 // ayat yang sudah pernah diputar diambil dari cache (bisa offline); yang belum, diputar dari internet lalu disimpan
 function setSrc(u){
-  const my=++tok;cu=u;if(ou){URL.revokeObjectURL(ou);ou=null}
-  if(have.has(u)){caches.open(AC).then(c=>c.match(u)).then(r=>r?r.blob():null).catch(()=>null).then(b=>{if(my!==tok)return;if(b){ou=URL.createObjectURL(b);A.src=ou}else A.src=u;pl()});return}
-  A.src=u;pl();keep(u);
+  const my=++tok;cu=u;retry=0;clearTimeout(wd);if(ou){URL.revokeObjectURL(ou);ou=null}
+  if(have.has(u)){caches.open(AC).then(c=>c.match(u)).then(r=>r?r.blob():null).catch(()=>null).then(b=>{if(my!==tok)return;if(b){ou=URL.createObjectURL(b);A.src=ou}else A.src=u;pl();arm(my)});return}
+  A.src=u;pl();keep(u);arm(my);
 }
 function warmNext(){if(g<endG()){const u=url(g+1);warm.src=u;keep(u)}}
 function load(n){
-  window.recHalt&&recHalt();
+  window.recHalt&&recHalt();unlock();
   g=n;rep=0;act=true;
   // ayat 1 surat (selain Al-Fatihah & At-Taubah): putar basmalah lebih dulu (audio ayat 1 Al-Fatihah), baru ayatnya
   const[s0,a0]=sa(g);pre=!!S.bs&&a0===1&&s0!==1&&s0!==9;
@@ -735,14 +776,10 @@ function halt(){
 }
 window.audHalt=halt;
 A.onplay=A.onpause=paintPlay;
-A.onerror=()=>{
-  if(!act)return;
-  // salinan di cache rusak/tidak bisa diputar: buang, lalu putar dari internet
-  if(ou&&cu&&A.src===ou){const u=cu;URL.revokeObjectURL(ou);ou=null;have.delete(u);caches.open(AC).then(c=>c.delete(u)).catch(()=>{});A.src=u;pl();return}
-  const[s,a]=sa(g),c=A.error?A.error.code:0;
-  toast('Audio '+(pre?'basmalah':SN[s-1]+' '+a)+' tidak dapat dimuat (kode '+c+'). Periksa koneksi internet.');paintPlay();
-};
+A.onplaying=()=>{if(silent())return;skips=0;clearTimeout(wd)};
+A.onerror=()=>{if(!act||silent()||!A.getAttribute('src'))return;bad(A.error?A.error.code:0)};
 A.onended=()=>{
+  if(silent())return;
   if(pre){pre=false;A.loop=S.rep===0;setSrc(url(g));label();return}
   rep++;
   if(S.rep===0||rep<S.rep){label();A.currentTime=0;A.play().catch(()=>{});return}
@@ -771,7 +808,7 @@ $('aplay').onclick=()=>{
   if(!act)load(S.rng?S.rs:startHere());
   else if(!inR()){lap=0;load(S.rs)} // rentang diubah: mulai dari awal rentang dan pindah ke halamannya
   else if(A.paused&&awayNow()){lap=0;load(S.rng?S.rs:startHere())} // dijeda lalu pindah halaman: putar dari halaman yang dilihat
-  else if(A.paused){window.recHalt&&recHalt();A.play().catch(()=>{})}else A.pause();
+  else if(A.paused){window.recHalt&&recHalt();if(A.error||!A.getAttribute('src')||silent())load(g);else pl()}else A.pause();
 };
 $('aprev').onclick=()=>{if(act)load(Math.max(begG(),g-1))};
 $('anext').onclick=()=>{if(!act)return;g<endG()?load(g+1):halt()};
