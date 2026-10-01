@@ -31,7 +31,6 @@ body.ui header,body.ui #bot{transform:none;opacity:1;pointer-events:auto}
 .pg{background:#FDFCF5;flex:0 0 100%;width:100%;height:100%;position:relative;scroll-snap-align:center;scroll-snap-stop:always;display:flex;direction:rtl;text-align:center;color:var(--muted);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .h{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:center;justify-content:center}
 .h img{width:auto;height:100%;max-width:100%;object-fit:contain;-webkit-mask-image:linear-gradient(90deg,transparent,#000 2.5%,#000 97.5%,transparent);mask-image:linear-gradient(90deg,transparent,#000 2.5%,#000 97.5%,transparent)}
-.sp::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - min(9vw,130px));width:min(18vw,260px);pointer-events:none;background:linear-gradient(90deg,transparent,rgba(0,0,0,.16) 50%,transparent)}
 .msg{max-width:340px;padding:0 16px;direction:ltr}
 #homebtn{flex:none;padding:8px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none}
 #homebtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -74,7 +73,6 @@ body.hid .h{visibility:hidden}
 .h{position:relative}
 .ao{position:absolute;pointer-events:none;direction:ltr}
 .ao i{position:absolute;border-radius:5px;pointer-events:auto;-webkit-tap-highlight-color:transparent}
-body.aud .ao i{cursor:pointer}
 .ao i.on{background:rgba(214,170,40,.36)}
 #abtn{flex:none;padding:8px;display:grid;place-items:center}
 #abtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -260,20 +258,24 @@ const start=n=>spread?(n%2?n:n-1):n;
 function loadImg(h){
   if(h.dataset.done)return;h.dataset.done=1;loaded.add(h);const n=+h.dataset.p;
   const im=new Image();im.alt='Halaman '+n;im.addEventListener('load',()=>window.audOv&&audOv(h,im));
-  im.onerror=()=>{h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat</div>'};
+  im.onerror=()=>{if(!im.isConnected)return;h.innerHTML='<div class="msg">Gambar halaman '+n+' tidak ditemukan.<br>Yang dicari: <code dir="ltr">'+src(n)+'</code><br>Cocokkan nama folder dan file di repo dengan <code dir="ltr">config.js</code>, atau kalau sedang offline, halaman ini belum tersimpan di perangkat<br><br><button class="retry">Coba lagi</button></div>';h.querySelector('.retry').onclick=()=>{h.replaceChildren();delete h.dataset.done;loaded.delete(h);loadImg(h)}};
   const u=src(n);try{if(new URL(u,location.href).origin!==location.origin)im.crossOrigin='anonymous'}catch(e){}
   im.src=u;h.appendChild(im);
 }
 // buang gambar yang sudah jauh dari halaman aktif supaya memori tidak menumpuk
+addEventListener('online',()=>[...loaded].forEach(h=>{const b=h.querySelector('.retry');b&&b.click()}));
 function unloadFar(){loaded.forEach(h=>{if(Math.abs(+h.dataset.p-cur)>12){h.replaceChildren();delete h.dataset.done;loaded.delete(h)}})}
 // Penanda (bookmark) & posisi terakhir dibaca — disimpan di localStorage,
 // dipakai bersama oleh index.html (tab PENANDA, tombol "Lanjut membaca").
 const bm=()=>{try{return JSON.parse(localStorage.getItem('quran.bm')||'[]')}catch(e){return[]}};
 const saveBm=a=>{try{localStorage.setItem('quran.bm',JSON.stringify(a))}catch(e){}};
-function syncBm(n){$('bmbtn').classList.toggle('on',bm().includes(n))}
+// mode 2 halaman: satu layar = dua halaman, jadi penanda dicek & dihapus untuk keduanya
+const pgs=n=>spread&&n<T?[n,n+1]:[n];
+const bmOn=n=>{const a=bm();return pgs(n).some(p=>a.includes(p))};
+function syncBm(n){$('bmbtn').classList.toggle('on',bmOn(n))}
 $('bmbtn').onclick=()=>{
-  const a=bm(),i=a.indexOf(cur);
-  if(i>-1)a.splice(i,1);else a.push(cur);
+  let a=bm();
+  if(bmOn(cur)){const ps=pgs(cur);a=a.filter(p=>!ps.includes(p))}else a.push(cur);
   saveBm(a);syncBm(cur);
 };
 function setCur(n){
@@ -463,12 +465,12 @@ $('rdel').innerHTML=svg('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>');
 const dbp=new Promise(r=>{try{const q=indexedDB.open('mushaf-rec',1);q.onupgradeneeded=()=>q.result.createObjectStore('r');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
 const tx=async(mode,fn)=>{const d=await dbp;if(!d)return null;return new Promise(r=>{try{const t=d.transaction('r',mode),q=fn(t.objectStore('r'));t.oncomplete=()=>r(q.result);t.onerror=t.onabort=()=>r(null)}catch(e){r(null)}})};
 const get=async k=>(await tx('readonly',s=>s.get(k)))||mem[k]||null;
-const put=async(k,v)=>{mem[k]=v;await tx('readwrite',s=>s.put(v,k))};
+const put=async(k,v)=>{mem[k]=v;return(await tx('readwrite',s=>s.put(v,k)))!=null};
 const del=async k=>{delete mem[k];await tx('readwrite',s=>s.delete(k))};
 const mime=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'':'';
 const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 let busy=false,rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,pctx=null,recPeak=0,audio=null,url=null,mt;
-function note(t){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},3500)}
+function note(t,ms){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},ms||3500)}
 function stopAudio(){const a=audio;audio=null;playKey=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
 // Cari rekaman untuk halaman n: potret (halaman n) dan landscape (pasangan n,n+1) saling dikenali.
 async function find(n){
@@ -488,6 +490,7 @@ async function sync(n){
   data=r?r.v:null;dataKey=r?r.k:null;tools.hidden=!r;
 }
 window.recSync=n=>{sync(n)};
+window.recHalt=()=>stopAudio();
 // Tanda sedang merekam tanpa tombol di atas halaman: warna bilah status + judul tab
 const tcm=document.querySelector('meta[name=theme-color]'),tcOrig=tcm&&tcm.content,ttl0=document.title;
 function recMark(on){if(tcm)tcm.content=on?'#C0392B':tcOrig;document.title=on?'\u25cf Merekam \u00b7 '+ttl0:ttl0}
@@ -538,14 +541,16 @@ async function begin(){
     const type=mr.mimeType||mime||'audio/webm',dur=(Date.now()-t0)/1000;
     release(); // mikrofon langsung mati; tombol dikunci sampai rekaman tersimpan
     fab.disabled=true;fab.classList.remove('rec');fab.style.removeProperty('--lv');rt.hidden=false;rt.textContent='Menyimpan\u2026';
+    let saved=true;
     try{
       if(chunks.length){
-        await put(recPage,{blob:new Blob(chunks,{type}),type,dur,span:recSpan,peak:recPeak,ts:Date.now()});
-        if(replaceKey!=null&&replaceKey!==recPage)await del(replaceKey);
+        saved=await put(recPage,{blob:new Blob(chunks,{type}),type,dur,span:recSpan,peak:recPeak,ts:Date.now()});
+        if(saved&&replaceKey!=null&&replaceKey!==recPage)await del(replaceKey);
       }
       navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
     }catch(e){}
     rec=null;resetUI();sync(cur);
+    if(!saved)note('Rekaman belum tersimpan permanen (penyimpanan penuh/diblokir). Unduh sekarang agar tidak hilang.',8000);
   };
   // meteran level + gerbang bising (timer, bukan rAF, agar tetap jalan saat layar redup)
   let floor=0,open=true,hold=0;
@@ -590,8 +595,9 @@ async function start(){
 fab.onclick=()=>{if(rec){if(rec.state==='recording')rec.stop()}else start()};
 $('rredo').onclick=start;
 play.onclick=()=>{
-  if(audio){audio.paused?audio.play():audio.pause();return}
+  if(audio){if(audio.paused){window.audHalt&&audHalt();audio.play().catch(()=>{})}else audio.pause();return}
   if(!data)return;
+  window.audHalt&&audHalt();
   url=URL.createObjectURL(data.blob);playKey=dataKey;const a=audio=new Audio(url);
   // normalisasi saat diputar: rekaman pelan dinaikkan sampai puncak ~0,8 (maks 8x), dengan pembatas
   try{
@@ -703,18 +709,19 @@ function meta(){
   const[s,a]=sa(g);
   try{navigator.mediaSession.metadata=new MediaMetadata({title:SN[s-1]+' : '+a,artist:cq().n,album:'Murattal'})}catch(e){}
 }
-const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('http'),have=new Set();let tok=0,ou=null;
+const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('http'),have=new Set();let tok=0,ou=null,cu=null;
 if(ok)caches.open(AC).then(c=>c.keys()).then(ks=>ks.forEach(r=>have.add(r.url))).catch(()=>{});
 const keep=u=>{if(!ok||have.has(u))return;fetch(u,{mode:'cors'}).then(r=>{if(!r.ok)throw 0;return caches.open(AC).then(c=>c.put(u,r))}).then(()=>have.add(u)).catch(()=>{})};
-const pl=()=>A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar');paintPlay()}});
+const pl=()=>A.play().catch(e=>{if(e&&e.name!=='AbortError'){toast('Audio tidak bisa diputar ('+(e.name||'?')+')');paintPlay()}});
 // ayat yang sudah pernah diputar diambil dari cache (bisa offline); yang belum, diputar dari internet lalu disimpan
 function setSrc(u){
-  const my=++tok;if(ou){URL.revokeObjectURL(ou);ou=null}
+  const my=++tok;cu=u;if(ou){URL.revokeObjectURL(ou);ou=null}
   if(have.has(u)){caches.open(AC).then(c=>c.match(u)).then(r=>r?r.blob():null).catch(()=>null).then(b=>{if(my!==tok)return;if(b){ou=URL.createObjectURL(b);A.src=ou}else A.src=u;pl()});return}
   A.src=u;pl();keep(u);
 }
 function warmNext(){if(g<endG()){const u=url(g+1);warm.src=u;keep(u)}}
 function load(n){
+  window.recHalt&&recHalt();
   g=n;rep=0;act=true;
   // ayat 1 surat (selain Al-Fatihah & At-Taubah): putar basmalah lebih dulu (audio ayat 1 Al-Fatihah), baru ayatnya
   const[s0,a0]=sa(g);pre=!!S.bs&&a0===1&&s0!==1&&s0!==9;
@@ -723,12 +730,18 @@ function load(n){
 }
 function halt(){
   if(!act)return;
-  act=false;g=0;lap=0;pre=false;A.pause();A.removeAttribute('src');A.load();
+  act=false;g=0;lap=0;pre=false;tok++;A.pause();A.removeAttribute('src');A.load();
   mark();label();paintPlay();
 }
 window.audHalt=halt;
 A.onplay=A.onpause=paintPlay;
-A.onerror=()=>{if(act){toast('Audio tidak dapat dimuat. Periksa koneksi internet.');paintPlay()}};
+A.onerror=()=>{
+  if(!act)return;
+  // salinan di cache rusak/tidak bisa diputar: buang, lalu putar dari internet
+  if(ou&&cu&&A.src===ou){const u=cu;URL.revokeObjectURL(ou);ou=null;have.delete(u);caches.open(AC).then(c=>c.delete(u)).catch(()=>{});A.src=u;pl();return}
+  const[s,a]=sa(g),c=A.error?A.error.code:0;
+  toast('Audio '+(pre?'basmalah':SN[s-1]+' '+a)+' tidak dapat dimuat (kode '+c+'). Periksa koneksi internet.');paintPlay();
+};
 A.onended=()=>{
   if(pre){pre=false;A.loop=S.rep===0;setSrc(url(g));label();return}
   rep++;
@@ -758,20 +771,20 @@ $('aplay').onclick=()=>{
   if(!act)load(S.rng?S.rs:startHere());
   else if(!inR()){lap=0;load(S.rs)} // rentang diubah: mulai dari awal rentang dan pindah ke halamannya
   else if(A.paused&&awayNow()){lap=0;load(S.rng?S.rs:startHere())} // dijeda lalu pindah halaman: putar dari halaman yang dilihat
-  else A.paused?A.play().catch(()=>{}):A.pause();
+  else if(A.paused){window.recHalt&&recHalt();A.play().catch(()=>{})}else A.pause();
 };
 $('aprev').onclick=()=>{if(act)load(Math.max(begG(),g-1))};
 $('anext').onclick=()=>{if(!act)return;g<endG()?load(g+1):halt()};
 $('astop').onclick=halt;
 if('mediaSession' in navigator){
   const ms=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch(e){}};
-  ms('play',()=>{act&&A.play().catch(()=>{})});ms('pause',()=>{A.pause()});
+  ms('play',()=>{if(act){window.recHalt&&recHalt();A.play().catch(()=>{})}});ms('pause',()=>{A.pause()});
   ms('previoustrack',()=>$('aprev').click());ms('nexttrack',()=>$('anext').click());ms('stop',halt);
 }
 
 // ---------- kotak ayat di atas gambar ----------
 const pr={};
-const getBoxes=m=>pr[m]||(pr[m]=fetch('ayah-boxes-'+m+'.json').then(r=>r.ok?r.json():{}).catch(()=>({})));
+const getBoxes=m=>pr[m]||(pr[m]=fetch('ayah-boxes-'+m+'.json').then(r=>r.ok?r.json():r.status===404?{}:Promise.reject()).catch(()=>{delete pr[m];return{}}));
 function place(h){
   const o=h.__o;if(!o||!o.im.isConnected||!o.im.naturalWidth)return;
   const hb=h.getBoundingClientRect(),ib=o.im.getBoundingClientRect(),nw=o.im.naturalWidth,nh=o.im.naturalHeight;
@@ -794,14 +807,17 @@ window.audOv=async(h,im)=>{
   }
   h.appendChild(ov);h.__o={ov,im};place(h);ro&&ro.observe(h);
 };
+// kembali online: pasang kotak ayat di halaman yang sempat gagal memuatnya
+addEventListener('online',()=>[...loaded].forEach(h=>{const im=h.querySelector('img');if(im&&im.complete&&im.naturalWidth&&!h.querySelector('.ao'))audOv(h,im)}));
 // ---------- tekan lama ayat: putar, tandai, bagikan ----------
 const trk=$('track'),ash=$('ash');
 let lpT=0,lpX=0,lpY=0,lpFired=false,lk=null;
 const clearLp=()=>{clearTimeout(lpT);lpT=0};
-function paintAct(){const on=bm().includes(cur);$('abm').querySelector('span').textContent=on?'Hapus':'Tandai';$('abm').classList.toggle('on',on)}
-function openAct(k){
+function paintAct(){const on=bmOn(cur);$('abm').querySelector('span').textContent=on?'Hapus':'Tandai';$('abm').classList.toggle('on',on)}
+function openAct(k,el){
   lk=k;paintAct();ash.hidden=false;
-  let r=null;document.querySelectorAll('.ao i[data-k="'+k+'"]').forEach(n=>{n.classList.add('sel');const b=n.getBoundingClientRect();if(!r||b.top<r.top)r=b});
+  let r=null;document.querySelectorAll('.ao i[data-k="'+k+'"]').forEach(n=>{n.classList.add('sel');const b=n.getBoundingClientRect();if(b.right<=0||b.left>=innerWidth)return;if(!r||b.top<r.top)r=b});
+  if(!r&&el)r=el.getBoundingClientRect();
   const p=$('apop');if(!r)return;
   const pw=p.offsetWidth,ph=p.offsetHeight,cx=r.left+r.width/2,x=Math.max(8,Math.min(innerWidth-pw-8,cx-pw/2));
   let y=r.top-ph-12,dn=false;if(y<8){y=r.bottom+12;dn=true}
@@ -812,12 +828,12 @@ trk.addEventListener('pointerdown',e=>{
   lpFired=false;clearLp();
   const i=e.target.closest&&e.target.closest('.ao i');if(!i||e.button>0)return;
   lpX=e.clientX;lpY=e.clientY;
-  lpT=setTimeout(()=>{lpT=0;lpFired=true;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}openAct(i.dataset.k)},450);
+  lpT=setTimeout(()=>{lpT=0;lpFired=true;try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}openAct(i.dataset.k,i)},450);
 });
 trk.addEventListener('pointermove',e=>{if(lpT&&Math.hypot(e.clientX-lpX,e.clientY-lpY)>10)clearLp()});
 ['pointerup','pointercancel','pointerleave'].forEach(n=>trk.addEventListener(n,clearLp));
 trk.addEventListener('scroll',clearLp,{passive:true});
-// fase capture: tekan lama tidak memicu ketukan; ketukan pada ayat (mode murattal) memutar audio dan tidak memunculkan/menyembunyikan bilah
+// fase capture: tekan lama tidak ikut memicu ketukan (ketukan biasa tetap menampilkan/menyembunyikan bilah)
 trk.addEventListener('click',e=>{
   if(lpFired){lpFired=false;e.stopPropagation();e.preventDefault();return}
 },true);
@@ -879,8 +895,12 @@ qs.addEventListener('click',e=>{if(e.target===qs)qs.hidden=true});
 $('qoff').onclick=async()=>{
   const st=$('qst');if(off)return;
   if(!ok){st.textContent='Perlu dibuka lewat alamat web (https)';return}
-  const j=juzOf(cur),g0=C.ps[C.juzStart[j-1]-1]||1,g1=j<30?C.ps[C.juzStart[j]-1]-1:TA,tot=g1-g0+1,list=[];
-  for(let x=g0;x<=g1;x++){const u=url(x);if(!have.has(u))list.push(u)}
+  const j=juzOf(cur),g0=C.ps[C.juzStart[j-1]-1]||1,g1=j<30?C.ps[C.juzStart[j]-1]-1:TA,list=[];
+  const all=new Set();let needBs=false;
+  for(let x=g0;x<=g1;x++){all.add(url(x));const[s,a]=sa(x);if(a===1&&s!==1&&s!==9)needBs=true}
+  if(S.bs&&needBs)all.add(url(1)); // basmalah = audio ayat 1 Al-Fatihah
+  all.forEach(u=>{if(!have.has(u))list.push(u)});
+  const tot=all.size;
   off=true;let i=0,n=0,f=0;const up=()=>{st.textContent='Juz '+j+': '+(tot-list.length+n)+' / '+tot+' ayat tersimpan'+(f?' \u00b7 '+f+' gagal':'')};up();
   const w=async()=>{while(i<list.length){const u=list[i++];try{const r=await fetch(u,{mode:'cors'});if(!r.ok)throw 0;await(await caches.open(AC)).put(u,r);have.add(u);n++}catch(e){f++}up()}};
   await Promise.all([w(),w(),w()]);off=false;

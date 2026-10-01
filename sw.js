@@ -1,6 +1,6 @@
 // Cache halaman/aset app ini. Nama diberi awalan 'quran-shell-' supaya hanya cache miliknya yang dibersihkan.
 // Cache 'mushaf-v1' (unduhan gambar, dipakai bersama Kuis Murojaah v3) dan cache app lain TIDAK dihapus.
-const CACHE = 'quran-shell-v2';
+const CACHE = 'quran-shell-v3'; // naik versi: membuang salinan audio murattal yang dulu ikut tersimpan di cache ini
 const ASSETS = ['./', './index.html', './mushaf.html', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   // simpan per file: satu file yang tidak ada tidak menggagalkan instalasi
@@ -14,6 +14,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const r = e.request;
   if (r.method !== 'GET') return;
+  // audio murattal (everyayah): biarkan browser mengurusnya sendiri (permintaan Range, dan tidak digandakan ke cache ini;
+  // simpanan offline audio ada di cache 'mushaf-audio-v1' yang diatur mushaf.html)
+  if (r.headers.has('range') || r.destination === 'audio' || r.destination === 'video' || /\.(mp3|m4a|ogg|wav)$/i.test(new URL(r.url).pathname)) return;
   // gambar mushaf: pakai simpanan offline dulu (dari unduhan), lalu internet; tidak digandakan ke cache lain
   if (/\.(jpe?g|png|webp)$/i.test(new URL(r.url).pathname)) {
     e.respondWith(caches.match(r).then(hit => hit || fetch(r)));
