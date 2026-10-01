@@ -689,12 +689,14 @@ $('aprev').innerHTML=svg(I.prev);$('anext').innerHTML=svg(I.next);$('astop').inn
 
 // ---------- pemutar ----------
 const A=new Audio(),warm=new Audio();A.preload='auto';warm.preload='auto';
-let g=0,rep=0,lap=0,act=false,pre=false,tt; // rep = ulangan ayat, lap = putaran seluruh rentang
+let g=0,rep=0,lap=0,act=false,pre=false,tt,rk='';
+const rkNow=()=>S.rng&&!(S.rs===1&&S.re===TA)?S.rs+'-'+S.re:'';
+const rngMoved=()=>S.rng&&rkNow()!==rk; // rentang diubah setelah pemutaran dimulai // rep = ulangan ayat, lap = putaran seluruh rentang
 const endG=()=>S.rng?S.re:TA,begG=()=>S.rng?S.rs:1;
 const inR=()=>!S.rng||(g>=S.rs&&g<=S.re); // ayat yang sedang aktif masih di dalam rentang?
 const recording=()=>$('rfab').classList.contains('rec');
 function toast(m){const e=$('at');e.textContent=m;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{e.hidden=true},3000)}
-function paintPlay(){const pl=act&&!A.paused&&inR();$('aplay').innerHTML=svg(pl?I.pause:I.play);$('aplay').setAttribute('aria-label',pl?'Jeda':'Putar murattal')}
+function paintPlay(){const pl=act&&!A.paused&&inR()&&!rngMoved();$('aplay').innerHTML=svg(pl?I.pause:I.play);$('aplay').setAttribute('aria-label',pl?'Jeda':'Putar murattal')}
 function label(){
   const l=$('alb');document.body.classList.toggle('pl',act);$('aq').textContent=cq().n+(act&&S.rng&&S.rr!==1?' \u00b7 Putaran '+(lap+1)+(S.rr?'/'+S.rr:' \u221e'):'');if(!act){l.textContent='Murattal';return}
   if(pre){l.textContent='Basmalah';return}
@@ -775,7 +777,7 @@ function setSrc(u){
 function warmNext(){if(g<endG()){warm.src=url(g+1)}}
 function load(n){
   window.recHalt&&recHalt();if(navigator.onLine===false)unlock();
-  g=n;rep=0;act=true;
+  g=n;rep=0;act=true;rk=rkNow();
   // ayat 1 surat (selain Al-Fatihah & At-Taubah): putar basmalah lebih dulu (audio ayat 1 Al-Fatihah), baru ayatnya
   const[s0,a0]=sa(g);pre=!!S.bs&&a0===1&&s0!==1&&s0!==9;
   A.loop=S.rep===0&&!pre;setSrc(pre?url(1):url(g));
@@ -818,7 +820,7 @@ function tap(k){
 $('aplay').onclick=()=>{
   if(recording()){toast('Hentikan rekaman dulu');return}
   if(!act)load(S.rng?S.rs:startHere());
-  else if(!inR()){lap=0;load(S.rs)} // rentang diubah: mulai dari awal rentang dan pindah ke halamannya
+  else if(S.rng&&(!inR()||rngMoved())){lap=0;load(S.rs)} // rentang dipilih/diubah: mulai dari awal rentang dan pindah ke halamannya, baik sedang diputar, dijeda, maupun ayat aktif masih di dalam rentang baru
   else if(A.paused&&awayNow()){lap=0;load(S.rng?S.rs:startHere())} // dijeda lalu pindah halaman: putar dari halaman yang dilihat
   else if(A.paused){window.recHalt&&recHalt();if(A.error||!A.getAttribute('src')||silent())load(g);else pl()}else A.pause();
 };
@@ -910,13 +912,17 @@ function paintRange(){
   $('arng').checked=S.rng;$('arb').hidden=!S.rng;
 }
 function paintRep(){document.querySelectorAll('#arep button').forEach(b=>b.classList.toggle('on',+b.dataset.r===S.rep));document.querySelectorAll('#arr button').forEach(b=>b.classList.toggle('on',+b.dataset.r===S.rr))}
-function setRange(edit,g0){
-  if(edit==='s'){S.rs=g0;if(S.re<S.rs)S.re=S.rs}else{S.re=g0;if(S.rs>S.re)S.rs=S.re}
+// Ganti SURAT: awal = ayat 1 surat itu, akhir = ayat terakhir surat itu (bukan ayat 1, supaya tidak menyeret sisi lain).
+// Jika sisi yang lain jadi terbalik, sisi itu dipindah ke batas surat (bukan ke satu ayat yang sama).
+const lastOf=s=>gk(s,C.ay[s-1]);
+function setRange(edit,g0,bySurat){
+  if(edit==='s'){S.rs=g0;if(S.re<S.rs)S.re=bySurat?lastOf(surahOf(S.rs)):S.rs}
+  else{S.re=g0;if(S.rs>S.re)S.rs=bySurat?gk(surahOf(S.re),1):S.re}
   save();paintRange();paintPlay();
 }
-rsS.onchange=()=>setRange('s',gk(+rsS.value,1));
+rsS.onchange=()=>setRange('s',gk(+rsS.value,1),true);
 rsA.onchange=()=>setRange('s',gk(+rsS.value,+rsA.value));
-reS.onchange=()=>setRange('e',gk(+reS.value,1));
+reS.onchange=()=>setRange('e',lastOf(+reS.value),true);
 reA.onchange=()=>setRange('e',gk(+reS.value,+reA.value));
 $('arng').onchange=e=>{S.rng=e.target.checked;save();paintRange();paintPlay()};
 $('apg').onclick=()=>{
