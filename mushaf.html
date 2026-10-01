@@ -26,7 +26,7 @@ header{top:0;transform:translateY(-100%);display:flex;direction:rtl;align-items:
 #bot{bottom:0;transform:translateY(100%);border-top:1px solid var(--line)}
 #ind{text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px))}
 body.ui header,body.ui #bot{transform:none;opacity:1;pointer-events:auto}
-#track{position:fixed;inset:0;display:flex;direction:rtl;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+#track{position:fixed;inset:0;display:flex;direction:rtl;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;overscroll-behavior-y:none;touch-action:pan-x pinch-zoom}
 #track::-webkit-scrollbar{display:none}
 .pg{background:#FDFCF5;flex:0 0 100%;width:100%;height:100%;position:relative;scroll-snap-align:center;scroll-snap-stop:always;display:flex;direction:rtl;text-align:center;color:var(--muted);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .h{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:center;justify-content:center}
@@ -65,6 +65,35 @@ body.ui header,body.ui #bot{transform:none;opacity:1;pointer-events:auto}
 #rfab.rec{background:#C0392B;border-color:#C0392B;box-shadow:0 0 0 calc(var(--lv,0)*10px) rgba(192,57,43,.35)}
 #rt{order:-1;flex:0 0 100%;text-align:center;font:600 13px system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--ink)}
 #rtools{display:flex;gap:8px}
+/* Kecerahan dalam app: lapisan gelap di atas halaman saja (bilah, sheet, dan tombol tidak ikut redup) */
+#dim{position:fixed;inset:0;z-index:3;background:#000;opacity:0;pointer-events:none}
+#bhud{position:fixed;z-index:9;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-6px);display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;background:var(--ink);color:var(--bg);font:600 12.5px system-ui,sans-serif;font-variant-numeric:tabular-nums;direction:ltr;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+#bhud.on{opacity:1;transform:translate(-50%,0)}
+#bhud svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex:none}
+#bhv{min-width:34px;text-align:right}
+#bhb{position:relative;width:64px;height:4px;border-radius:2px;overflow:hidden;background:color-mix(in srgb,var(--bg) 30%,transparent)}
+#bhb::after{content:"";position:absolute;inset:0;width:var(--v,100%);border-radius:2px;background:var(--bg)}
+/* Pemutar rekaman: kartu tipis di bilah bawah; tetap tampil di halaman mana pun selama rekaman diputar */
+#rp{margin:8px 10px 0;padding:8px 10px 6px;display:grid;gap:2px;direction:ltr;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+#rp[hidden],body.pl #rp{display:none}
+.rp1{display:flex;align-items:center;gap:8px}
+#rplay{background:var(--primary);color:var(--on);border-color:var(--primary)}
+#rplay:disabled{opacity:.6}
+#rpc,#rpd{flex:none;min-width:34px;font:600 12px system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--muted)}
+#rpc{text-align:right}
+.rb.sm{width:32px;height:32px}
+.rb.sm svg{width:16px;height:16px}
+#rpx[hidden],#rpn[hidden]{display:none}
+.rp2{display:flex;align-items:center;gap:12px;padding-left:2px;font:600 12px system-ui,sans-serif;color:var(--muted)}
+.rp2 .sp{flex:1}
+#rpl{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rps{flex:1;min-width:0;height:28px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;--v:0%}
+#rps:focus{outline:none}
+#rps::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--primary) var(--v),var(--line) 0)}
+#rps::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+#rps::-moz-range-progress{height:4px;border-radius:2px;background:var(--primary)}
+#rps::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--primary);border:2px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#rps::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--primary);border:2px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 #rt[hidden],#rtools[hidden]{display:none}
 #reye{display:none} /* tombol mata sudah ada di bilah atas */
 /* Sembunyikan halaman (murojaah tanpa melihat) */
@@ -205,6 +234,8 @@ body.ui #bk{display:none}
 <div id="qs" class="scrim" hidden><div class="sheet" role="dialog" aria-label="Pilih qori"><div class="grab"></div><div class="sh-t"><span>Qori</span></div><div id="ql"></div>
   <button id="qoff" class="row"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Simpan juz ini offline</span></button><div id="qst"></div></div></div>
 <div id="at" hidden role="status"></div>
+<div id="dim"></div>
+<div id="bhud" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg><span id="bhv">100%</span><i id="bhb"></i></div>
 <main id="track"></main>
 <button id="bk" aria-label="Kembali"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
 
@@ -247,8 +278,12 @@ body.ui #bk{display:none}
       <button id="aopt" class="rb" aria-label="Pengaturan murattal"></button>
     </div>
   </div>
+  <div id="rp" hidden>
+    <div class="rp1"><button id="rplay" class="rb" aria-label="Putar rekaman"></button><span id="rpc">0:00</span><input id="rps" type="range" min="0" max="1000" step="1" value="0" aria-label="Posisi rekaman"><span id="rpd">0:00</span><button id="rpx" class="rb sm" aria-label="Tutup pemutar rekaman" hidden></button></div>
+    <div class="rp2"><span id="rpl"></span><button id="rpn" class="lnk" hidden></button><span class="sp"></span><button id="rpb" class="lnk" aria-label="Mundur 10 detik">−10 dtk</button><button id="rpf" class="lnk" aria-label="Maju 10 detik">+10 dtk</button></div>
+  </div>
   <div id="rc"><span id="rt" hidden></span>
-    <div id="rtools" hidden><button id="rplay" class="rb" aria-label="Putar rekaman"></button><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div>
+    <div id="rtools" hidden><button id="rredo" class="rb" aria-label="Rekam ulang"></button><button id="rdl" class="rb" aria-label="Unduh rekaman"></button><button id="rdel" class="rb" aria-label="Hapus rekaman"></button></div>
   </div>
   <div id="brow"><button id="rcfg" class="rb" aria-label="Pengaturan rekaman"></button><div id="ind"></div><button id="rfab" class="rb" aria-label="Rekam bacaan"></button></div>
 </div>
@@ -514,7 +549,7 @@ if(location.protocol.startsWith('http')&&navigator.serviceWorker)navigator.servi
 (()=>{
 const fab=$('rfab'),tools=$('rtools'),rt=$('rt'),play=$('rplay'),mem={};
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
-const I={mic:'<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',pause:'<path d="M9 5v14M15 5v14"/>'};
+const I={mic:'<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',play:'<path d="M8 5v14l11-7z" fill="currentColor"/>',pause:'<path d="M9 5v14M15 5v14"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
 fab.innerHTML=svg(I.mic);play.innerHTML=svg(I.play);
 $('rcfg').innerHTML=svg('<path d="M6 4v6M6 14v6M12 4v2M12 10v10M18 4v10M18 18v2"/><circle cx="6" cy="12" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="18" cy="16" r="2"/>');
 $('rcfg').onclick=()=>{const r=$('rset');r.hidden=!r.hidden;$('rcfg').classList.toggle('on',!r.hidden)};
@@ -546,9 +581,83 @@ const put=async(k,v)=>{mem[k]=v;return(await tx('readwrite',s=>s.put(v,k)))!=nul
 const del=async k=>{delete mem[k];await tx('readwrite',s=>s.delete(k))};
 const mime=window.MediaRecorder?['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'':'';
 const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
-let busy=false,rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,pctx=null,recPeak=0,audio=null,url=null,mt;
+let busy=false,rec=null,stream,ctx,raf,t0,recPage,data=null,dataKey=null,playKey=null,recSpan=1,replaceKey=null,pctx=null,recPeak=0,mt;
 function note(t,ms){rt.hidden=false;rt.textContent=t;clearTimeout(mt);mt=setTimeout(()=>{if(!rec)rt.hidden=true},ms||3500)}
-function stopAudio(){const a=audio;audio=null;playKey=null;if(a){a.onpause=a.onended=null;a.pause()}if(url){URL.revokeObjectURL(url);url=null}play.innerHTML=svg(I.play)}
+// ---- Pemutar rekaman: Web Audio (posisi akurat, bisa digeser ke mana saja). Sesi tetap jalan saat pindah halaman. ----
+const rp=$('rp'),rps=$('rps'),rpc=$('rpc'),rpd=$('rpd'),rpl=$('rpl'),rpn=$('rpn'),rpx=$('rpx');
+let L=null,PB=null,sn=null,pg=null,off=0,off0=0,tp0=0,playing=false,held=false,loading=false,drag=false,tk=0;
+// L = rekaman yang dimuat di pemutar; held = pengguna sudah memutarnya dan belum menutup/selesai (sesi tidak ikut berganti saat pindah halaman)
+rpx.innerHTML=svg(I.x);
+const durOf=()=>PB?PB.duration:(L&&L.v.dur)||0;
+const pos=()=>playing?Math.min(durOf(),off0+(pctx.currentTime-tp0)):off;
+const spanTxt=(k,v)=>v&&v.span===2?k+'\u2013'+(k+1):''+k;
+function paintP(){
+  rp.hidden=!L||!!rec;rpx.hidden=!held;
+  if(!L||rec)return;
+  const d=durOf(),p=Math.min(pos(),d||0);
+  if(!drag){rps.value=d?Math.round(p/d*1000):0;rpc.textContent=fmt(p)}
+  rps.style.setProperty('--v',(rps.value/10)+'%');
+  rpd.textContent=fmt(d);
+  rps.setAttribute('aria-valuetext',fmt(p)+' dari '+fmt(d));
+  play.innerHTML=svg(playing?I.pause:I.play);play.setAttribute('aria-label',playing?'Jeda rekaman':'Putar rekaman');play.disabled=loading;
+  rpl.textContent='Rekaman hal. '+spanTxt(L.k,L.v);
+  rpn.hidden=!(held&&dataKey!=null&&dataKey!==L.k);
+  if(!rpn.hidden)rpn.textContent='Putar hal. '+spanTxt(dataKey,data);
+}
+function stopSn(){const s=sn;sn=null;if(s){s.onended=null;try{s.stop()}catch(e){}try{s.disconnect()}catch(e){}}}
+function stopAudio(){stopSn();playing=false;held=false;loading=false;off=0;clearInterval(tk);L=null;PB=null;paintP()}
+function setL(l){L=l;PB=null;off=0;paintP()}
+function reset(){stopAudio();if(!rec&&data)setL({k:dataKey,v:data})} // tutup sesi; pemutar kembali ke rekaman halaman yang sedang dilihat
+async function ensure(){
+  if(PB)return PB;
+  const my=L,ab=await my.v.blob.arrayBuffer();
+  const b=await new Promise((res,rej)=>{try{const r=pctx.decodeAudioData(ab,res,rej);r&&r.then&&r.then(res,rej)}catch(e){rej(e)}});
+  if(L!==my)return null; // rekaman diganti saat mendekode
+  PB=b;return b;
+}
+function go(t){
+  stopSn();
+  const s=pctx.createBufferSource();s.buffer=PB;
+  // normalisasi saat diputar: rekaman pelan dinaikkan sampai puncak ~0,8 (maks 8x), dengan pembatas
+  if(!pg){pg=pctx.createGain();const pc=pctx.createDynamicsCompressor();pc.threshold.value=-1;pc.knee.value=0;pc.ratio.value=20;pc.attack.value=.003;pc.release.value=.15;pg.connect(pc);pc.connect(pctx.destination)}
+  pg.gain.value=L.v.peak>0?Math.min(8,Math.max(1,.8/L.v.peak)):1;
+  s.connect(pg);
+  s.onended=()=>{if(s===sn)reset()}; // selesai: kembali ke awal
+  sn=s;off0=t;tp0=pctx.currentTime;playing=true;
+  s.start(0,t);
+  clearInterval(tk);tk=setInterval(()=>{if(!drag&&!document.hidden)paintP()},120);
+  paintP();
+}
+function pauseP(){off=pos();stopSn();playing=false;clearInterval(tk);paintP()}
+function seekP(t){
+  if(!L)return;
+  const d=durOf();t=Math.max(0,Math.min(d?d-.05:0,t));
+  if(playing&&PB)go(t);else{off=t;paintP()} // belum diputar: ini menjadi titik mulai
+}
+async function toggle(){
+  if(playing){pauseP();return}
+  if(!L||loading)return;
+  window.audHalt&&audHalt();
+  const my=L;
+  try{pctx=pctx||new(window.AudioContext||window.webkitAudioContext)();pctx.resume&&pctx.resume()}catch(e){note('Audio tidak bisa diputar');return}
+  loading=true;paintP();
+  let b=null;
+  try{b=await ensure()}catch(e){}
+  loading=false;
+  if(L!==my){paintP();return}
+  if(!b){paintP();note('Rekaman tidak bisa dibaca');return}
+  if(pctx.state!=='running'){try{await pctx.resume()}catch(e){}}
+  if(off>=b.duration-.1)off=0;
+  held=true;go(off);
+}
+rps.oninput=()=>{drag=true;rpc.textContent=fmt(rps.value/1000*durOf());rps.style.setProperty('--v',(rps.value/10)+'%')};
+rps.onchange=()=>{seekP(rps.value/1000*durOf());drag=false;paintP()};
+rps.onpointerup=rps.onpointercancel=rps.onblur=()=>{drag=false};
+$('rpb').onclick=()=>seekP(pos()-10);
+$('rpf').onclick=()=>seekP(pos()+10);
+rpx.onclick=reset;
+rpn.onclick=()=>{if(dataKey==null||!data)return;stopAudio();setL({k:dataKey,v:data});toggle()};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(playing&&pctx&&pctx.state==='suspended')pctx.resume().catch(()=>{});paintP()});
 // Cari rekaman untuk halaman n: potret (halaman n) dan landscape (pasangan n,n+1) saling dikenali.
 async function find(n){
   for(const k of spread?[n,n+1]:[n,n-1]){
@@ -562,12 +671,12 @@ async function sync(n){
   if(rec)return;
   const r=await find(n);
   if(n!==cur||rec)return;
-  if(audio&&r&&playKey===r.k){data=r.v;dataKey=r.k;tools.hidden=false;return} // putaran tetap jalan saat layar diputar
-  stopAudio();
-  data=r?r.v:null;dataKey=r?r.k:null;tools.hidden=!r;
+  data=r?r.v:null;dataKey=r?r.k:null;tools.hidden=!r; // alat rekam ulang / unduh / hapus selalu untuk halaman yang sedang dilihat
+  if(held){paintP();return} // rekaman yang sedang diputar tetap jalan di halaman mana pun
+  setL(r?{k:r.k,v:r.v}:null);
 }
 window.recSync=n=>{sync(n)};
-window.recHalt=()=>stopAudio();
+window.recHalt=()=>reset();
 // Tanda sedang merekam tanpa tombol di atas halaman: warna bilah status + judul tab
 const tcm=document.querySelector('meta[name=theme-color]'),tcOrig=tcm&&tcm.content,ttl0=document.title;
 function recMark(on){if(tcm)tcm.content=on?'#C0392B':tcOrig;document.title=on?'\u25cf Merekam \u00b7 '+ttl0:ttl0}
@@ -653,7 +762,7 @@ async function begin(){
     rt.textContent='\u25cf '+fmt(el)+' \u00b7 '+gv+'\u00d7'+(Lv.k||Lv.lp?' \u00b7 '+Lv.n:'')+(lim.reduction<-6?' \u00b7 terlalu keras, kurangi penguatan':(el>3&&recPeak<.03?' \u00b7 suara pelan, dekatkan mikrofon':''));
   };
   fab.classList.add('rec');fab.innerHTML=svg(I.stop);fab.setAttribute('aria-label','Berhenti merekam');fab.disabled=false;
-  tools.hidden=true;rt.hidden=false;
+  tools.hidden=true;rt.hidden=false;paintP();
   mr.start(1000);raf=setInterval(tick,30);tick();
   recMark(true);
   hideT=setTimeout(()=>{if(rec&&rec.state==='recording')document.body.classList.remove('ui')},3000); // bersihkan layar agar halaman terlihat penuh
@@ -671,24 +780,7 @@ async function start(){
 }
 fab.onclick=()=>{if(rec){if(rec.state==='recording')rec.stop()}else start()};
 $('rredo').onclick=start;
-play.onclick=()=>{
-  if(audio){if(audio.paused){window.audHalt&&audHalt();audio.play().catch(()=>{})}else audio.pause();return}
-  if(!data)return;
-  window.audHalt&&audHalt();
-  url=URL.createObjectURL(data.blob);playKey=dataKey;const a=audio=new Audio(url);
-  // normalisasi saat diputar: rekaman pelan dinaikkan sampai puncak ~0,8 (maks 8x), dengan pembatas
-  try{
-    pctx=pctx||new(window.AudioContext||window.webkitAudioContext)();pctx.resume&&pctx.resume();
-    const src=pctx.createMediaElementSource(a),pg=pctx.createGain(),pc=pctx.createDynamicsCompressor();
-    pg.gain.value=data.peak>0?Math.min(8,Math.max(1,.8/data.peak)):1;
-    pc.threshold.value=-1;pc.knee.value=0;pc.ratio.value=20;pc.attack.value=.003;pc.release.value=.15;
-    src.connect(pg);pg.connect(pc);pc.connect(pctx.destination);
-  }catch(e){}
-  a.onplay=()=>{play.innerHTML=svg(I.pause)};
-  a.onpause=()=>{play.innerHTML=svg(I.play)};
-  a.onended=stopAudio;
-  a.play().catch(stopAudio);
-};
+play.onclick=toggle;
 $('rdl').onclick=()=>{
   if(!data)return;
   const ext=/mp4/.test(data.type)?'m4a':/ogg/.test(data.type)?'ogg':'webm';
@@ -698,9 +790,53 @@ $('rdl').onclick=()=>{
 };
 $('rdel').onclick=async()=>{
   if(dataKey==null||!confirm('Hapus rekaman halaman '+dataKey+'?'))return;
-  stopAudio();await del(dataKey);data=null;dataKey=null;tools.hidden=true;
+  if(L&&L.k===dataKey)stopAudio();await del(dataKey);data=null;dataKey=null;tools.hidden=true;paintP();
 };
 sync(cur);
+})();
+
+// Kecerahan dalam app: geser ke atas = lebih terang, ke bawah = lebih gelap (lapisan gelap di atas halaman).
+// Browser tidak boleh mengubah kecerahan layar perangkat, jadi ini meredupkan tampilan app saja. Disimpan terpisah untuk potret dan landscape.
+(()=>{
+  const dim=$('dim'),hud=$('bhud'),hv=$('bhv'),hb=$('bhb'),trk=$('track'),oq=matchMedia('(orientation:landscape)');
+  const MIN=.2,key=()=>'quran.br.'+(oq.matches?'l':'p');
+  let br=1,ht=0,mode=-1,pid=null,sx=0,sy=0,b0=1,until=0;
+  const paint=()=>{
+    dim.style.opacity=(1-br).toFixed(3);
+    hv.textContent=Math.round(br*100)+'%';
+    hb.style.setProperty('--v',((br-MIN)/(1-MIN)*100).toFixed(1)+'%');
+  };
+  const load=()=>{let v=1;try{const x=parseFloat(localStorage.getItem(key()));if(x>=MIN&&x<=1)v=x}catch(e){}br=v;paint()};
+  const save=()=>{try{localStorage.setItem(key(),br.toFixed(3))}catch(e){}};
+  const show=()=>{hud.classList.add('on');clearTimeout(ht);ht=setTimeout(()=>hud.classList.remove('on'),1000)};
+  trk.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse')return;
+    if(!e.isPrimary){mode=-1;return} // jari kedua (mis. cubit): batalkan
+    pid=e.pointerId;sx=e.clientX;sy=e.clientY;b0=br;mode=0;
+  });
+  trk.addEventListener('pointermove',e=>{
+    if(e.pointerId!==pid||mode<0)return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(mode===0){
+      if(Math.abs(dx)<10&&Math.abs(dy)<10)return;
+      mode=Math.abs(dy)>Math.abs(dx)*1.4?2:-1; // 2 = geser vertikal (kecerahan); -1 = geser halaman, biarkan
+      if(mode!==2)return;
+      try{trk.setPointerCapture(e.pointerId)}catch(x){}
+    }
+    // satu rentang penuh (20%-100%) = geser setinggi 60% layar
+    br=Math.max(MIN,Math.min(1,b0-dy/(innerHeight*.6)*(1-MIN)));
+    paint();show();
+  });
+  const end=e=>{
+    if(e.pointerId!==pid)return;
+    if(mode===2){save();until=Date.now()+400}
+    mode=-1;pid=null;
+  };
+  trk.addEventListener('pointerup',end);trk.addEventListener('pointercancel',end);
+  // geser vertikal tidak ikut dihitung sebagai ketukan (menampilkan bilah / memutar ayat)
+  trk.addEventListener('click',e=>{if(Date.now()<until){e.stopPropagation();e.preventDefault()}},true);
+  oq.addEventListener('change',load);
+  load();
 })();
 
 // Sembunyikan/tampilkan halaman. Tahan tombol saat tersembunyi untuk mengintip. Status diingat.
