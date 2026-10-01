@@ -689,6 +689,7 @@ $('aprev').innerHTML=svg(I.prev);$('anext').innerHTML=svg(I.next);$('astop').inn
 
 // ---------- pemutar ----------
 const A=new Audio(),warm=new Audio();A.preload='auto';warm.preload='auto';
+try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){} // iOS 17+: tetap bunyi saat layar terkunci / tombol senyap
 let g=0,rep=0,lap=0,act=false,pre=false,tt,rk='';
 const rkNow=()=>S.rng&&!(S.rs===1&&S.re===TA)?S.rs+'-'+S.re:'';
 const rngMoved=()=>S.rng&&rkNow()!==rk; // rentang diubah setelah pemutaran dimulai // rep = ulangan ayat, lap = putaran seluruh rentang
@@ -707,7 +708,7 @@ function mark(){
   document.querySelectorAll('.ao i.on').forEach(n=>n.classList.remove('on'));
   if(act&&g){const[s,a]=sa(g);document.querySelectorAll('.ao i[data-k="'+s+':'+a+'"]').forEach(n=>n.classList.add('on'))}
 }
-let ftt=0,fck=0,retry=0,skips=0,wd=0,unl=false,triedCache=false,bko=0;
+let ftt=0,fck=0,retry=0,skips=0,wd=0,unl=false,triedCache=false,bko=0,up=false; // up = dijeda oleh pengguna sendiri
 const SIL='data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
 const silent=()=>A.src.indexOf('data:audio/wav')===0;
 // ayat ini sedang terlihat di layar? (kotaknya, atau halaman awal ayatnya, ada di tengah layar)
@@ -762,7 +763,7 @@ function bad(code){
   const fin=miss=>{
     if(!act||my!==tok)return;
     if(miss&&skips<3&&g<endG()){skips++;toast('Sumber audio '+nm+' tidak ada di server ('+fn+'), dilewati');load(g+1);return}
-    if(!miss&&bko<6){const d=Math.min(30000,2000*Math.pow(2,bko));bko++;toast('Audio '+nm+' belum bisa dimuat, mencoba lagi...');setTimeout(()=>{if(my!==tok||!act)return;A.src=u;pl();arm(my)},d);return}
+    if(!miss){const d=Math.min(30000,2000*Math.pow(2,Math.min(bko,6)));bko++;toast('Audio '+nm+' belum bisa dimuat, mencoba lagi...');setTimeout(()=>{if(my!==tok||!act)return;A.src=u;pl();arm(my)},d);return}
     toast('Audio '+nm+' gagal diputar (kode '+code+', '+fn+'). Ketuk putar untuk mencoba lagi.');paintPlay();
   };
   console.warn('Audio gagal:',u,'kode',code);
@@ -773,11 +774,13 @@ function bad(code){
 // ---- Siapkan ayat berikutnya di memori (blob) supaya pergantian ayat tidak butuh jaringan, terutama saat layar mati ----
 const mps=st=>{try{if('mediaSession' in navigator)navigator.mediaSession.playbackState=st}catch(e){}};
 // ---- Penjaga sesi: elemen audio hening yang terus berputar selama murattal aktif, supaya sistem tidak menghentikan halaman di celah antar ayat ----
-const kp=new Audio();kp.loop=true;kp.preload='auto';
+const kp=new Audio();kp.loop=true;kp.preload='auto';kp.setAttribute('playsinline','');
 function silenceUrl(){
-  const sr=8000,n=sr*30,b=new Uint8Array(44+n),d=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};
+  // 30 dtk, 16-bit, derau sangat halus (sekitar -66 dBFS, tidak terdengar) agar sistem menganggap ada audio yang benar-benar diputar
+  const sr=8000,m=sr*30,n=m*2,b=new Uint8Array(44+n),d=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};
   w(0,'RIFF');d.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);
-  d.setUint32(24,sr,true);d.setUint32(28,sr,true);d.setUint16(32,1,true);d.setUint16(34,8,true);w(36,'data');d.setUint32(40,n,true);b.fill(128,44);
+  d.setUint32(24,sr,true);d.setUint32(28,sr*2,true);d.setUint16(32,2,true);d.setUint16(34,16,true);w(36,'data');d.setUint32(40,n,true);
+  for(let i=0;i<m;i++)d.setInt16(44+i*2,Math.round((Math.random()*2-1)*16),true);
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
 function keepOn(){try{if(!kp.src)kp.src=silenceUrl();if(kp.paused){const p=kp.play();p&&p.catch&&p.catch(()=>{})}}catch(e){}}
@@ -927,8 +930,8 @@ function waUse(u){
   waGo();return true;
 }
 function waRepeat(){const h=W.q[0];if(W.act&&h&&!h.dead&&h.u===cu){waGo();return true}return false}
-function pauseAll(){if(W.act){W.paused=true;try{W.ctx.suspend().catch(()=>{})}catch(e){}paintPlay();mps('paused');keepOff()}else A.pause()}
-function playAll(){if(W.act){W.paused=false;try{W.ctx.resume().catch(()=>{})}catch(e){}paintPlay();mps('playing');keepOn();waTop()}else{const p=A.play();p&&p.catch&&p.catch(()=>{})}}
+function pauseAll(){up=true;if(W.act){W.paused=true;try{W.ctx.suspend().catch(()=>{})}catch(e){}paintPlay();mps('paused');keepOff()}else A.pause()}
+function playAll(){up=false;if(W.act){W.paused=false;try{W.ctx.resume().catch(()=>{})}catch(e){}paintPlay();mps('playing');keepOn();waTop()}else{const p=A.play();p&&p.catch&&p.catch(()=>{})}}
 // auto = pergantian ayat otomatis (bukan ketukan pengguna): boleh menunggu cache/blob karena elemen audio sudah terbuka kuncinya
 function setSrc(u,auto){
   const my=++tok;cu=u;retry=0;bko=0;triedCache=false;clearTimeout(wd);ou=null;
@@ -940,7 +943,7 @@ function setSrc(u,auto){
 }
 function load(n,auto){
   waInit();window.recHalt&&recHalt();if(navigator.onLine===false)unlock();
-  g=n;rep=0;act=true;rk=rkNow();keepOn();
+  g=n;rep=0;act=true;up=false;rk=rkNow();keepOn();
   // ayat 1 surat (selain Al-Fatihah & At-Taubah): putar basmalah lebih dulu (audio ayat 1 Al-Fatihah), baru ayatnya
   const[s0,a0]=sa(g);pre=!!S.bs&&a0===1&&s0!==1&&s0!==9;
   A.loop=S.rep===0&&!pre;setSrc(pre?url(1):url(g),auto);
@@ -948,7 +951,7 @@ function load(n,auto){
 }
 function halt(){
   if(!act)return;
-  act=false;g=0;lap=0;pre=false;tok++;waStop();A.pause();A.removeAttribute('src');A.load();clearPf();mps('none');keepOff();
+  act=false;up=false;g=0;lap=0;pre=false;tok++;waStop();A.pause();A.removeAttribute('src');A.load();clearPf();mps('none');keepOff();
   mark();label();paintPlay();
 }
 window.audHalt=halt;
@@ -967,6 +970,21 @@ function ended(){
   load(g+1,true);
 }
 A.onended=ended;
+// ---- Penjaga ketahanan: tiap 3 dtk selama murattal aktif dan tidak dijeda pengguna, hidupkan lagi bagian yang dimatikan sistem (layar mati / hemat baterai) ----
+setInterval(()=>{
+  if(!act||up)return;
+  try{
+    if(W.act&&W.ctx){
+      if(W.ctx.state==='closed'){W.fail=true;const u=cu;waStop();if(u)setSrc(u,true);return} // mesin mati total: pindah ke elemen audio biasa
+      keepOn();
+      if(W.ctx.state!=='running')W.ctx.resume().catch(()=>{});
+      waTop(); // isi ulang antrean walau pergantian ayat belum sempat memicunya
+    }else if(!W.act&&cu&&!silent()){
+      if(!A.paused)keepOn();
+      else if(document.hidden&&!A.ended&&!A.error&&A.getAttribute('src')&&A.readyState>=2)pl(); // dihentikan sistem saat layar mati: lanjutkan
+    }
+  }catch(e){}
+},3000);
 function firstHere(){return C.ps[cur-1]||1}
 // awal bacaan dari halaman yang sedang dilihat; bila surat yang tampil di judul dimulai di halaman ini, mulai dari ayat 1 surat itu
 function startHere(){
@@ -986,7 +1004,7 @@ $('aplay').onclick=()=>{
   if(!act)load(S.rng?S.rs:startHere());
   else if(S.rng&&(!inR()||rngMoved())){lap=0;load(S.rs)} // rentang dipilih/diubah: mulai dari awal rentang dan pindah ke halamannya, baik sedang diputar, dijeda, maupun ayat aktif masih di dalam rentang baru
   else if(isPaused()&&awayNow()){lap=0;load(S.rng?S.rs:startHere())} // dijeda lalu pindah halaman: putar dari halaman yang dilihat
-  else if(isPaused()){window.recHalt&&recHalt();if(W.act)playAll();else if(A.error||!A.getAttribute('src')||silent())load(g);else pl()}else pauseAll();
+  else if(isPaused()){window.recHalt&&recHalt();up=false;if(W.act)playAll();else if(A.error||!A.getAttribute('src')||silent())load(g);else pl()}else pauseAll();
 };
 $('aprev').onclick=()=>{if(act)load(Math.max(begG(),g-1))};
 $('anext').onclick=()=>{if(!act)return;g<endG()?load(g+1):halt()};
