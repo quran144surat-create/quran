@@ -1,6 +1,6 @@
 // Cache halaman/aset app ini. Nama diberi awalan 'quran-shell-' supaya hanya cache miliknya yang dibersihkan.
 // Cache 'mushaf-v1' (unduhan gambar, dipakai bersama Kuis Murojaah v3) dan cache app lain TIDAK dihapus.
-const CACHE = 'quran-shell-v3'; // naik versi: membuang salinan audio murattal yang dulu ikut tersimpan di cache ini
+const CACHE = 'quran-shell-v4'; // naik versi: mushaf.html kini menautkan manifest + ikon (agar bisa dipasang di HP)
 const ASSETS = ['./', './index.html', './mushaf.html', './config.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   // simpan per file: satu file yang tidak ada tidak menggagalkan instalasi
