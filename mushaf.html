@@ -245,7 +245,7 @@ body.ui #bk{display:none}
   <button id="qoff" class="row"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Simpan audio offline</span></button><div id="qst"></div></div></div>
 <div id="adbox" class="scrim" hidden><div class="sheet dl" role="dialog" aria-label="Simpan audio offline">
   <div class="grab"></div>
-  <div class="sh-t"><span id="atl">Audio offline</span><span class="pill" id="asum">0/30 juz</span></div>
+  <div class="sh-t"><span id="atl">Simpan offline</span><span class="pill" id="asum">0/30 juz</span></div>
   <div class="dl-bar"><button id="aall" class="lnk">Pilih semua</button><button id="anone" class="lnk">Bersihkan</button></div>
   <div id="ajg" role="group" aria-label="Pilih juz audio yang mau disimpan"></div>
   <div id="dlleg">✓ lengkap · terisi sebagian · kosong belum tersimpan</div>
@@ -894,7 +894,7 @@ on();
 // Kotak ayat dibaca dari ayah-boxes-P.json / ayah-boxes-L.json (tidak diubah, harus satu folder dengan mushaf.html).
 (()=>{
 const KEY='quran.aud';
-const RC=[{id:'ayyub',n:'Muhammad Ayyub',d:'Muhammad_Ayyoub_128kbps'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'kz-ayyoub',n:'Muhammad Ayyoub (audio kuis)',d:'kuis',qb:'ayyoub',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/'+g+'.mp3'},{id:'kz-husary',n:'Al-Husary (audio kuis)',d:'kuis',qb:'husary',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.husary/'+g+'.mp3'},{id:'nufais',n:'Ahmad Nufais',d:null}];
+const RC=[{id:'ayyub',n:'Muhammad Ayyoub',d:'kuis',qb:'ayyoub',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/'+g+'.mp3'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'kz-husary',n:'Al-Husary',d:'kuis',qb:'husary',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.husary/'+g+'.mp3'},{id:'nufais',n:'Ahmad Nufais',d:null}];
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={
   spk:'<path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
@@ -1437,7 +1437,6 @@ const acnt=j=>{let n=0;for(const u of ajuz()[j])if(have.has(u))n++;return n};
 const adone=j=>acnt(j)>=ajuz()[j].length;
 function apaint(){
   araf=0;const J=ajuz();let nd=0,k=0;const miss=new Set();
-  atl.textContent='Audio offline \u00b7 '+cq().n;
   for(let j=1;j<=30;j++){
     const n=acnt(j),N=J[j].length,d=n>=N,on=asel.has(j)&&!d,t=atiles[j];
     if(d)nd++;
@@ -1469,6 +1468,13 @@ async function astart(){
   arun=false;aprog.hidden=true;apaint();
   atxt.textContent=n>=N?'Selesai, '+order.length+' juz tersimpan':streak>=8?'Gagal berulang (koneksi atau penyimpanan penuh). Juz yang belum lengkap tetap terpilih.':astop?'Dihentikan. Yang sudah tersimpan tetap ada.':n+' tersimpan, '+f+' gagal. Juz yang belum lengkap tetap terpilih.';
 }
+async function aidle(){ // sama seperti lembar juz gambar: keterangan pemakaian bersama + ukuran terpakai
+  if(arun)return;
+  let mb='';
+  try{const e=await navigator.storage.estimate();if(e&&e.usage>1048576)mb='terpakai \u00b1'+Math.round(e.usage/1048576)+' MB'}catch(x){}
+  const t=[cq().qb?'Dipakai juga oleh app Kuis Murojaah':'',mb].filter(Boolean).join(' \u00b7 ');
+  if(!arun)atxt.textContent=t;
+}
 ajg.onclick=e=>{const t=e.target.closest('.jt');if(!t||arun)return;const j=+t.dataset.j;if(adone(j))return;asel.has(j)?asel.delete(j):asel.add(j);apaint()};
 $('aall').onclick=()=>{if(arun)return;for(let j=1;j<=30;j++)if(!adone(j))asel.add(j);apaint()};
 $('anone').onclick=()=>{if(arun)return;asel.clear();apaint()};
@@ -1481,7 +1487,7 @@ $('qoff').onclick=async()=>{
     try{await refreshHave()}catch(e){}
     if(aq0!==S.q){asel.clear();aq0=S.q;atxt.textContent=''}
     if(!asel.size){const j=juzOf(cur);if(!adone(j))asel.add(j)}
-    if(!arun)atxt.textContent=atxt.textContent||(cq().qb?'Audio qori ini dipakai bersama Kuis Murojaah':'Audio qori ini disimpan di perangkat');
+    aidle();
   }
   apaint();qs.hidden=true;adb.hidden=false;
 };
