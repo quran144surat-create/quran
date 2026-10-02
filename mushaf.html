@@ -894,7 +894,7 @@ on();
 // Kotak ayat dibaca dari ayah-boxes-P.json / ayah-boxes-L.json (tidak diubah, harus satu folder dengan mushaf.html).
 (()=>{
 const KEY='quran.aud';
-const RC=[{id:'ayyub',n:'Muhammad Ayyoub',d:'kuis',qb:'ayyoub',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/'+g+'.mp3'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'kz-husary',n:'Al-Husary',d:'kuis',qb:'husary',u:g=>'https://cdn.islamic.network/quran/audio/128/ar.husary/'+g+'.mp3'},{id:'nufais',n:'Ahmad Nufais',d:null}];
+const RC=[{id:'ayyub',n:'Muhammad Ayyoub',d:'Muhammad_Ayyoub_128kbps',qb:'ayyoub'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'kz-husary',n:'Al-Husary',d:'Husary_128kbps',qb:'husary'},{id:'nufais',n:'Ahmad Nufais',d:null}];
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={
   spk:'<path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
@@ -973,8 +973,8 @@ const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('htt
 // Qori biasa: Cache API ('mushaf-audio-v1'), seperti sebelumnya. Dua qori kuis (Ayyoub, Husary): langsung memakai IndexedDB Kuis Murojaah v3
 // ('hf-muraja-ah', toko 'kv', kunci 'audio:'/'audio-husary:' + nomor ayat global -> Blob), jadi hanya ada satu salinan dan kedua app berbagi data yang sama.
 const idbOK=!!window.indexedDB&&location.protocol.startsWith('http');
-const QB={ayyoub:{p:'audio:',i:'qori-audio-info',b:'https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/'},husary:{p:'audio-husary:',i:'qori-audio-info-husary',b:'https://cdn.islamic.network/quran/audio/128/ar.husary/'}};
-function qk(u){if(!u||typeof u!=='string')return null;for(const id in QB){const c=QB[id];if(u.indexOf(c.b)===0&&u.slice(-4)==='.mp3'){const x=+u.slice(c.b.length,-4);if(x>=1&&x<=6236)return{c,x}}}return null}
+const QB={ayyoub:{p:'audio:',i:'qori-audio-info',b:'https://everyayah.com/data/Muhammad_Ayyoub_128kbps/'},husary:{p:'audio-husary:',i:'qori-audio-info-husary',b:'https://everyayah.com/data/Husary_128kbps/'}};
+function qk(u){if(!u||typeof u!=='string')return null;for(const id in QB){const c=QB[id];if(u.indexOf(c.b)===0&&u.slice(-4)==='.mp3'){const m=/^(\d{3})(\d{3})$/.exec(u.slice(c.b.length,-4));if(m){const s=+m[1],a=+m[2];if(s>=1&&s<=114&&a>=1&&a<=C.ay[s-1])return{c,x:cum[s-1]+a}}}}return null}
 const okFor=u=>qk(u)?idbOK:ok;
 const idbp=q=>new Promise((res,rej)=>{q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
 const txp=(db,f)=>new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');f(tx.objectStore('kv'));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)});
@@ -1015,7 +1015,7 @@ async function loadHave(t){ // isi daftar alamat yang tersimpan; mengembalikan a
   const mig=[];
   if(ok){try{(await(await caches.open(AC)).keys()).forEach(r=>{t.add(r.url);if(qk(r.url))mig.push(r.url)})}catch(e){}}
   if(idbOK){try{const db=await qdb();const keys=await idbp(db.transaction('kv','readonly').objectStore('kv').getAllKeys());
-    keys.forEach(k=>{if(typeof k!=='string')return;for(const id in QB){const c=QB[id];if(k.indexOf(c.p)===0){const x=+k.slice(c.p.length);if(x>=1&&x<=6236)t.add(c.b+x+'.mp3')}}})}catch(e){}}
+    keys.forEach(k=>{if(typeof k!=='string')return;for(const id in QB){const c=QB[id];if(k.indexOf(c.p)===0){const x=+k.slice(c.p.length);if(x>=1&&x<=6236){const[s,a]=sa(x);t.add(c.b+pad(s)+pad(a)+'.mp3')}}}})}catch(e){}}
   return mig;
 }
 async function refreshHave(){const nh=new Set(),m=await loadHave(nh);have.clear();nh.forEach(u=>have.add(u));if(m.length)migQ(m)}
