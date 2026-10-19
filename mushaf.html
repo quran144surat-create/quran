@@ -225,6 +225,7 @@ body.ui #bk{display:none}
 <div id="menu" role="menu" hidden>
   <button id="hbtn"></button>
   <button id="qbtn" aria-label="Pilih qori"></button>
+  <button id="alastbtn" aria-label="Lanjutkan murattal dari ayat terakhir" hidden></button>
   <button id="dlbtn" aria-label="Simpan untuk offline"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg><span>Unduh untuk offline</span></button>
   <button id="reye"></button>
 </div>
@@ -1232,7 +1233,7 @@ function setSrc(u,auto){
 }
 function load(n,auto){
   waInit();window.recHalt&&recHalt();if(navigator.onLine===false)unlock();
-  g=n;rep=0;act=true;up=false;rk=rkNow();keepOn();
+  g=n;rep=0;act=true;up=false;rk=rkNow();keepOn();saveLast(n);
   // ayat 1 surat (selain Al-Fatihah & At-Taubah): putar basmalah lebih dulu (audio ayat 1 Al-Fatihah), baru ayatnya
   const[s0,a0]=sa(g);pre=!!S.bs&&a0===1&&s0!==1&&s0!==9;
   A.loop=S.rep===0&&!pre;setSrc(pre?url(1):url(g),auto);
@@ -1244,7 +1245,12 @@ function halt(){
   mark();label();paintPlay();
 }
 window.audHalt=halt;
-A.onplay=()=>{paintPlay();if(act&&!silent()){mps('playing');keepOn()}};A.onpause=()=>{if(sw)return;paintPlay();if(!A.ended){mps(act?'paused':'none');keepOff()}};
+A.onplay=()=>{paintPlay();if(act&&!silent()){mps('playing');keepOn()}};A.onpause=()=>{
+  if(sw)return;
+  // dijeda sistem (notifikasi HP, fokus audio hilang), bukan oleh pengguna: lanjutkan otomatis
+  if(act&&!up&&!A.ended&&!silent()&&A.getAttribute('src')){autoResume();return}
+  paintPlay();if(!A.ended){mps(act?'paused':'none');keepOff()}
+};
 A.onplaying=()=>{if(silent())return;skips=0;bko=0;clearTimeout(wd);mps('playing');if(act)keepOn();if(cu&&A.src===cu)keep(cu);if(act)prefetch()};
 A.onerror=()=>{if(!act||silent()||!A.getAttribute('src'))return;bad(A.error?A.error.code:0)};
 function ended(){
@@ -1259,6 +1265,31 @@ function ended(){
   load(g+1,true);
 }
 A.onended=ended;
+// Murattal hanya berhenti bila pengguna yang menghentikan (tombol jeda/berhenti). Jeda dari sistem dicoba dilanjutkan beberapa kali.
+let arT=0,arN=0;
+function autoResume(){
+  clearTimeout(arT);
+  if(!act||up)return;
+  arT=setTimeout(()=>{
+    if(!act||up)return;
+    try{
+      if(W.act&&W.ctx){if(W.ctx.state!=='running')W.ctx.resume().catch(()=>{});arN=0;return}
+      if(!A.paused||A.ended||silent()){arN=0;return}
+      const p=A.play();
+      if(p&&p.catch)p.then(()=>{arN=0}).catch(()=>{if(arN++<40)autoResume()});
+    }catch(e){}
+  },arN?800:250);
+}
+kp.addEventListener('pause',()=>{if(act&&!up&&!isPaused())keepOn()});
+// ayat terakhir yang diputar diingat, bisa dilanjutkan dari menu
+function saveLast(n){try{localStorage.setItem('quran.aud.last',String(n))}catch(e){}paintLast()}
+function paintLast(){
+  const b=$('alastbtn');let n=0;
+  try{n=+localStorage.getItem('quran.aud.last')||0}catch(e){}
+  if(!n||n<1||n>TA){b.hidden=true;return}
+  const[s,a]=sa(n);
+  b.innerHTML=svg(I.play)+'<span>Lanjut: '+SN[s-1]+' '+a+'</span>';b.dataset.k=s+':'+a;b.hidden=false;
+}
 // ---- Penjaga ketahanan: tiap 3 dtk selama murattal aktif dan tidak dijeda pengguna, hidupkan lagi bagian yang dimatikan sistem (layar mati / hemat baterai) ----
 setInterval(()=>{
   if(!act||up)return;
@@ -1270,7 +1301,7 @@ setInterval(()=>{
       waTop(); // isi ulang antrean walau pergantian ayat belum sempat memicunya
     }else if(!W.act&&cu&&!silent()){
       if(!A.paused)keepOn();
-      else if(document.hidden&&!A.ended&&!A.error&&A.getAttribute('src')&&A.readyState>=2)pl(); // dihentikan sistem saat layar mati: lanjutkan
+      else if(!A.ended&&!A.error&&A.getAttribute('src')&&A.readyState>=2)pl(); // dihentikan sistem (layar mati / notifikasi): lanjutkan
     }
   }catch(e){}
 },3000);
@@ -1298,6 +1329,7 @@ $('aplay').onclick=()=>{
 $('aprev').onclick=()=>{if(act)load(Math.max(begG(),g-1))};
 $('anext').onclick=()=>{if(!act)return;g<endG()?load(g+1):halt()};
 $('astop').onclick=halt;
+$('alastbtn').onclick=()=>{const k=$('alastbtn').dataset.k;if(k)tap(k)};
 if('mediaSession' in navigator){
   const ms=(n,f)=>{try{navigator.mediaSession.setActionHandler(n,f)}catch(e){}};
   ms('play',()=>{if(act){window.recHalt&&recHalt();playAll()}});ms('pause',()=>{pauseAll()});
@@ -1493,6 +1525,6 @@ $('qoff').onclick=async()=>{
 };
 // pemutar mengambang naik di atas bilah bawah saat bilah muncul
 if(window.ResizeObserver){new ResizeObserver(()=>document.documentElement.style.setProperty('--bh',$('bot').offsetHeight+'px')).observe($('bot'))}
-paintQ();paintRange();paintRep();paintPlay();label();
+paintQ();paintRange();paintRep();paintPlay();label();paintLast();
 })();
 </script></body></html>
