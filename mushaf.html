@@ -127,6 +127,8 @@ body.hid .h{visibility:hidden}
 .ao{position:absolute;pointer-events:none;direction:ltr}
 .ao i{position:absolute;border-radius:5px;pointer-events:auto;-webkit-tap-highlight-color:transparent}
 .ao i.on{background:rgba(214,170,40,.36)}
+.ao i.hl{background:rgba(214,170,40,.55);animation:hlf 2.8s ease-out forwards}
+@keyframes hlf{0%,65%{opacity:1}100%{opacity:0}}
 #abtn{flex:none;padding:8px;display:grid;place-items:center}
 #abtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 #abtn.on{color:var(--goldink);border-color:var(--gold);background:var(--gold)}
@@ -234,6 +236,7 @@ body.ui #bk{display:none}
   <div class="sh-t"><span>Pindah ke</span><span class="pill" id="info" hidden></span></div>
   <label class="fld">Juz<select id="jsel" aria-label="Juz"></select></label>
   <label class="fld">Surat<select id="ssel" aria-label="Surat"></select></label>
+  <label class="fld">Ayat<select id="asel" aria-label="Ayat"></select></label>
   <label class="fld">Halaman<select id="sel" aria-label="Halaman"></select></label>
 </div></div>
 <div id="ash" class="scrim" hidden><div id="apop" role="menu">
@@ -329,6 +332,19 @@ const surahOf=g=>{let lo=0,hi=C.ay.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if
 for(let j=1;j<=30;j++)$('jsel').add(new Option('Juz '+j,j));
 SN.forEach((n,i)=>$('ssel').add(new Option((i+1)+'. '+n,i+1)));
 for(let i=1;i<=T;i++)$('sel').add(new Option('Hal. '+i,i));
+// daftar ayat mengikuti surat yang dipilih
+function fillAy(s1,a1){const n=C.ay[s1-1],o=$('asel');if(o.options.length!==n){o.replaceChildren();for(let i=1;i<=n;i++)o.add(new Option(i,i))}o.value=a1}
+// sorot ayat tujuan sebentar setelah pindah (menunggu kotak ayat halaman itu selesai dipasang)
+let hlT=0;
+function hlShow(k,p){
+  clearTimeout(hlT);let n=0;
+  const t=()=>{
+    const c=cells[start(p)],ns=c?c.querySelectorAll('.ao i[data-k="'+k+'"]'):[];
+    if(ns.length){ns.forEach(x=>{x.classList.remove('hl');void x.offsetWidth;x.classList.add('hl');x.addEventListener('animationend',()=>x.classList.remove('hl'),{once:true})});return}
+    if(++n<25)hlT=setTimeout(t,200);
+  };
+  hlT=setTimeout(t,150);
+}
 
 const track=$('track'),mq=matchMedia('(orientation:landscape)');
 let spread=mq.matches,cells={},loaded=new Set(),loadObs,curObs,rz=false,curUrl=null,ftgt=0;
@@ -363,6 +379,7 @@ function setCur(n){
   // surat yang tampil di halaman aktif; pilihan pengguna dipertahankan bila masih ada di halaman ini
   const e=spread&&n<T?n+1:n,s1=surahOf(C.ps[n-1]),s2=surahOf(e<T?C.ps[e]-1:TA),sv=+$('ssel').value;
   $('ssel').value=(sv>=s1&&sv<=s2)?sv:s1;
+  {const sv2=+$('ssel').value,g0=C.ps[n-1];fillAy(sv2,surahOf(g0)===sv2?g0-cum[sv2-1]:1)}
   $('ttl').textContent='Juz '+j+' \u00b7 '+SN[+$('ssel').value-1];
   $('ind').textContent='Hal. '+(spread&&n<T?n+'–'+(n+1):n)+' / '+T;
   const hasAyah=ayahPage&&(ayahPage===n||(spread&&ayahPage===n+1));
@@ -408,7 +425,8 @@ document.addEventListener('fullscreenchange',hold);
 
 $('sel').onchange=e=>goto(+e.target.value,false);
 $('jsel').onchange=e=>goto(C.juzStart[+e.target.value-1],false);
-$('ssel').onchange=e=>goto(pageOfAyah(+e.target.value,1),false);
+$('ssel').onchange=e=>{const s1=+e.target.value;fillAy(s1,1);goto(pageOfAyah(s1,1),false)};
+$('asel').onchange=e=>{const s1=+$('ssel').value,a1=+e.target.value,p=pageOfAyah(s1,a1);goto(p,false);hlShow(s1+':'+a1,p)};
 
 // Tekan lama / seret gambar halaman tidak memunculkan menu bawaan browser
 track.addEventListener('contextmenu',e=>e.preventDefault());
@@ -437,7 +455,7 @@ menu.addEventListener('click',e=>{if(e.target.closest('button'))setMenu(false)})
 document.addEventListener('click',e=>{if(!menu.hidden&&!e.target.closest('#menu,#morebtn')){e.stopPropagation();setMenu(false)}},true);
 $('ttl').onclick=()=>{setMenu(false);navSheet.hidden=false};
 navSheet.addEventListener('click',e=>{if(e.target===navSheet)navSheet.hidden=true});
-['jsel','ssel','sel'].forEach(id=>$(id).addEventListener('change',()=>{navSheet.hidden=true}));
+['jsel','ssel','asel','sel'].forEach(id=>$(id).addEventListener('change',()=>{navSheet.hidden=true}));
 new MutationObserver(()=>{if(!document.body.classList.contains('ui')){setMenu(false);$('dlbox').hidden=true;$('rset').hidden=true;$('rcfg').classList.remove('on')}}).observe(document.body,{attributes:true,attributeFilter:['class']});
 addEventListener('keydown',e=>{if(e.key==='Escape'){navSheet.hidden=true;$('ash').hidden=true;$('qs').hidden=true;$('dlbox').hidden=true;setMenu(false)}});
 // Tombol kembali perangkat: tutup lapisan yang terbuka (popup ayat, sheet qori/navigasi, kotak unduh, menu) dulu; baru keluar bila tidak ada
