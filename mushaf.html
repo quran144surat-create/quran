@@ -913,7 +913,7 @@ on();
 // Kotak ayat dibaca dari ayah-boxes-P.json / ayah-boxes-L.json (tidak diubah, harus satu folder dengan mushaf.html).
 (()=>{
 const KEY='quran.aud';
-const RC=[{id:'ayyub',n:'Muhammad Ayyoub',d:'Muhammad_Ayyoub_128kbps',qb:'ayyoub'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps'},{id:'kz-husary',n:'Al-Husary',d:'Husary_128kbps',qb:'husary'},{id:'nufais',n:'Ahmad Nufais',d:null}];
+const RC=[{id:'ayyub',n:'Muhammad Ayyoub',d:'Muhammad_Ayyoub_128kbps',qb:'ayyoub'},{id:'afasy',n:'Misyari Rasyid',d:'Alafasy_128kbps',qb:'afasy'},{id:'shatri',n:'Abu Bakr Ash-Shatri',d:'Abu_Bakr_Ash-Shaatree_128kbps',qb:'shatri'},{id:'kz-husary',n:'Al-Husary',d:'Husary_128kbps',qb:'husary'},{id:'nufais',n:'Ahmad Nufais',d:null}];
 const svg=p=>'<svg viewBox="0 0 24 24">'+p+'</svg>';
 const I={
   spk:'<path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
@@ -928,11 +928,14 @@ const cl=x=>Math.min(TA,Math.max(1,Math.round(+x)||1));
 let S={on:true,q:'ayyub',rep:1,rr:1,bs:true,rng:false,rs:1,re:TA};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
 S.rs=cl(S.rs);S.re=Math.max(S.rs,cl(S.re));if(![0,1,2,3].includes(S.rep))S.rep=1;if(![0,1,2,3].includes(S.rr))S.rr=1;S.bs=S.bs!==false;S.on=true;if(!RC.some(r=>r.id===S.q&&r.d))S.q='ayyub';S.rng=!!S.rng;
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const AKEY='hf-muraja-ah-active-qori'; // pilihan qori aktif dibagi dengan Kuis Murojaah
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{const z=cq().qb;if(z)localStorage.setItem(AKEY,z)}catch(e){}};
 const pad=n=>String(n).padStart(3,'0');
 const sa=g=>{const s=surahOf(g);return[s,g-cum[s-1]]};
 const gk=(s,a)=>cum[s-1]+a;
 const cq=()=>RC.find(r=>r.id===S.q)||RC[0];
+const fromKuis=()=>{try{const v=localStorage.getItem(AKEY),r=RC.find(x=>x.qb===v&&x.d);return r?r.id:null}catch(e){return null}};
+{const k=fromKuis();if(k)S.q=k}
 const url=g=>{const r=cq();if(r.u)return r.u(g);const[s,a]=sa(g);return 'https://everyayah.com/data/'+r.d+'/'+pad(s)+pad(a)+'.mp3'};
 
 $('aprev').innerHTML=svg(I.next);$('anext').innerHTML=svg(I.prev);$('astop').innerHTML=svg(I.stop);$('aopt').innerHTML=svg(I.set);
@@ -992,7 +995,9 @@ const AC='mushaf-audio-v1',ok=!!window.caches&&location.protocol.startsWith('htt
 // Qori biasa: Cache API ('mushaf-audio-v1'), seperti sebelumnya. Dua qori kuis (Ayyoub, Husary): langsung memakai IndexedDB Kuis Murojaah v3
 // ('hf-muraja-ah', toko 'kv', kunci 'audio:'/'audio-husary:' + nomor ayat global -> Blob), jadi hanya ada satu salinan dan kedua app berbagi data yang sama.
 const idbOK=!!window.indexedDB&&location.protocol.startsWith('http');
-const QB={ayyoub:{p:'audio:',i:'qori-audio-info',b:'https://everyayah.com/data/Muhammad_Ayyoub_128kbps/'},husary:{p:'audio-husary:',i:'qori-audio-info-husary',b:'https://everyayah.com/data/Husary_128kbps/'}};
+const QB={ayyoub:{p:'audio:',i:'qori-audio-info',b:'https://everyayah.com/data/Muhammad_Ayyoub_128kbps/'},husary:{p:'audio-husary:',i:'qori-audio-info-husary',b:'https://everyayah.com/data/Husary_128kbps/'},
+  afasy:{p:'audio-afasy:',i:'qori-audio-info-afasy',b:'https://everyayah.com/data/Alafasy_128kbps/'},
+  shatri:{p:'audio-shatri:',i:'qori-audio-info-shatri',b:'https://everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps/'}};
 function qk(u){if(!u||typeof u!=='string')return null;for(const id in QB){const c=QB[id];if(u.indexOf(c.b)===0&&u.slice(-4)==='.mp3'){const m=/^(\d{3})(\d{3})$/.exec(u.slice(c.b.length,-4));if(m){const s=+m[1],a=+m[2];if(s>=1&&s<=114&&a>=1&&a<=C.ay[s-1])return{c,x:cum[s-1]+a}}}}return null}
 const okFor=u=>qk(u)?idbOK:ok;
 const idbp=q=>new Promise((res,rej)=>{q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
@@ -1467,6 +1472,7 @@ function paintQ(){
     b.onclick=()=>{S.q=r.id;save();paintQ();label();$('qst').textContent='';if(act)load(g)};return b}));
 }
 qb.onclick=()=>{paintQ();qs.hidden=false};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const k=fromKuis();if(k&&k!==S.q){S.q=k;paintQ();label()}});
 qs.addEventListener('click',e=>{if(e.target===qs)qs.hidden=true});
 // Simpan audio offline: pilih banyak juz sekaligus untuk qori yang sedang dipilih (cache 'mushaf-audio-v1', sama dengan cache otomatis)
 const adb=$('adbox'),ajg=$('ajg'),atxt=$('atxt'),ago=$('ago'),aprog=$('aprog'),asum=$('asum'),atl=$('atl'),atiles=[];
